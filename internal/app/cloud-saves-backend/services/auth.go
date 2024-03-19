@@ -4,9 +4,9 @@ import (
 	authDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
 	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
+	password_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/password-utils"
 	"fmt"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -32,15 +32,14 @@ func NewAuth(db *gorm.DB) AuthService {
 	}
 }
 
-
 func (s *authService) Register(registerDTO *authDTOs.RegisterDTO) (*userDTOs.UserResponseDTO, error) {
 	roleUser := models.Role{} 
-	err := s.db.Where(&models.Role{Name: "USER"}).First(&roleUser).Error
+	err := s.db.Where(&models.Role{Name: "ROLE_USER"}).First(&roleUser).Error
 	if err != nil {
 		return nil, err
 	}
 	
-	hashedPassword, err := hashPassword(registerDTO.Password);
+	hashedPassword, err := password_utils.HashPassword(registerDTO.Password);
 	if err != nil {
 		return nil, err
 	}
@@ -69,18 +68,7 @@ func (s *authService) Register(registerDTO *authDTOs.RegisterDTO) (*userDTOs.Use
 	return &userResponseDTO, nil
 }
 
-func hashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10);
-	if err != nil {
-		return "", err
-	}
-	return string(hashedPassword), nil
-}
 
-func comparePasswords(hashedPassword, password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	return err == nil
-}
 
 func (s *authService) Login(
 	loginDTO *authDTOs.LoginDTO,
@@ -95,7 +83,7 @@ func (s *authService) Login(
 		return nil, err
 	}
 
-	if !comparePasswords(user.Password, loginDTO.Password) {
+	if !password_utils.ComparePasswords(user.Password, loginDTO.Password) {
 		return nil, fmt.Errorf("INCORRECT_USERNAME_OR_PASSWORD")
 	}
 
@@ -121,11 +109,11 @@ func (s *authService) ChangePassword(
 		return err
 	}
 
-	if !comparePasswords(user.Password, changePasswordDTO.OldPassword) {
+	if !password_utils.ComparePasswords(user.Password, changePasswordDTO.OldPassword) {
 		return fmt.Errorf("INCORRECT_USERNAME_OR_PASSWORD")
 	}
 
-	hashedPassword, err := hashPassword(changePasswordDTO.NewPassword)
+	hashedPassword, err := password_utils.HashPassword(changePasswordDTO.NewPassword)
 	if err != nil {
 		return err
 	}

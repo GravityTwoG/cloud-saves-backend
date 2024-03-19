@@ -4,10 +4,11 @@ import (
 	authDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
 	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
+	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
+	"fmt"
 	"net/http"
-	"time"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,7 +32,9 @@ type authController struct {
 	authService services.AuthService
 }
 
-func NewAuth(authService services.AuthService) AuthController {
+func NewAuth(
+	authService services.AuthService, 
+) AuthController {
 	return &authController{
 		authService: authService,
 	}
@@ -39,13 +42,21 @@ func NewAuth(authService services.AuthService) AuthController {
 
 func (c *authController) Register(ctx *gin.Context) {
 	registerDTO := authDTOs.RegisterDTO{}
-	ctx.Bind(&registerDTO)
+ 	err := ctx.ShouldBindJSON(&registerDTO)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest, 
+			err.Error(),
+		)
+		return
+	}
 
 	userResponseDTO, err := c.authService.Register(&registerDTO)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest, 
+			err.Error(),
+		)
 		return
 	}
 
@@ -58,115 +69,56 @@ func (c *authController) Login(ctx *gin.Context) {
 
 	userResponseDTO, err := c.authService.Login(&loginDTO)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"message": err.Error(),
-		})
+		http_error_utils.HTTPError(
+			ctx, http.StatusUnauthorized, 
+			err.Error(),
+		)
 		return
 	}
 
-	session := sessions.Create(userResponseDTO)
+	session := sessions.Default(ctx)
+	session.Set("user", userResponseDTO) 
+	session.Save()
 
-	cookie := http.Cookie{
-		Name:    "session_id",
-		Value:   session.Id,
-		Expires: session.ExpiresAt,
-		Path: "/",
-		Domain: "",
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-	}
-
-	ctx.Writer.Header().Add("Set-Cookie", cookie.String())
 	ctx.JSON(http.StatusOK, userResponseDTO)
 }
 
 func (c *authController) Logout(ctx *gin.Context) {
-	cookie, err := ctx.Request.Cookie("session_id")
-	if err != nil {
-		if err == http.ErrNoCookie {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"message": "Unauthorized",
-			})
-			return
-		}
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unauthorized",
-	}	)
-		return
-	}
-	
-	_, err = sessions.Get(cookie.Value)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"message": "Unauthorized",
-	}	)
-		return
-	}
+	session := sessions.Default(ctx)
+	session.Delete("user")
+	session.Save()
 
-	sessions.Delete(cookie.Value)
-	
-	cookie = &http.Cookie{
-		Name:    "session_id",
-		Value:   "",
-		Expires: time.Now(),
-		Path: "/",
-		Domain: "",
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-	}
-
-	ctx.Writer.Header().Add("Set-Cookie", cookie.String())
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Logged out.",
 	})
 }
 
 func (c *authController) Me(ctx *gin.Context) {
-	cookie, err := ctx.Request.Cookie("session_id")
-	if err != nil {
-		if err == http.ErrNoCookie {
-			ctx.JSON(http.StatusUnauthorized, gin.H{
-				"message": "Unauthorized",
-			})
-			return
-		}
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unauthorized",
-	}	)
+	session := sessions.Default(ctx)
+	userResponseDTO := session.Get("user")
+	if userResponseDTO == nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusUnauthorized, 
+			"UNAUTHORIZED",
+		)
 		return
-	}
-	
-	session, err := sessions.Get(cookie.Value)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"message": "Unauthorized",
-		})
-		return
-	}
-
-	userResponseDTO := userDTOs.UserResponseDTO{
-		Id: session.UserId,
-		Email: session.Email,
-		Username: session.Username,
-		Role: session.Role,
-		IsBlocked: false,
 	}
 	
 	ctx.JSON(http.StatusOK, &userResponseDTO)
 }
 
 func (c *authController) getUserId(ctx *gin.Context) (uint, error) {
-	cookie, err := ctx.Request.Cookie("session_id")
-	if err != nil {
-		return 0, err
-	}
-	
-	session, err := sessions.Get(cookie.Value)
-	if err != nil {
-		return 0, err
+	session := sessions.Default(ctx)
+	val := session.Get("user")
+
+	var userResponseDTO *userDTOs.UserResponseDTO 
+	var ok bool
+
+	if userResponseDTO, ok = val.(*userDTOs.UserResponseDTO); !ok || userResponseDTO == nil {
+		return 0, fmt.Errorf("UNAUTHORIZED")
 	}
 
-	return session.UserId, nil
+	return userResponseDTO.Id, nil
 }
 
 func (c *authController) ChangePassword(ctx *gin.Context) {
@@ -175,17 +127,19 @@ func (c *authController) ChangePassword(ctx *gin.Context) {
 	
 	userId, err := c.getUserId(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{
-			"message": err.Error(),
-		})
+		http_error_utils.HTTPError(
+			ctx, http.StatusUnauthorized, 
+			err.Error(),
+		)
 		return
 	}
 
 	err = c.authService.ChangePassword(userId, &changePasswordDTO)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest, 
+			err.Error(),
+		)
 		return
 	}
 
