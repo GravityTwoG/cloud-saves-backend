@@ -1,16 +1,31 @@
 package controllers
 
 import (
-	authDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
-	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
+	auth_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/auth"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
+
+
+func AddAuthRoutes(router *gin.RouterGroup, authService services.AuthService) {
+	authController := newAuth(authService)
+
+	authRouter := router.Group("/auth")
+	
+	authRouter.POST("/registration", middlewares.Unauthorized, authController.Register)
+	authRouter.POST("/login", middlewares.Unauthorized, authController.Login)
+	authRouter.POST("/logout", middlewares.Auth, authController.Logout)
+	authRouter.GET("/me", middlewares.Auth, authController.Me)
+	authRouter.POST("/auth-change-password", middlewares.Auth, authController.ChangePassword)
+	authRouter.POST("/recover-password", middlewares.Unauthorized, authController.RequestPasswordReset)
+	authRouter.POST("/change-password", middlewares.Unauthorized, authController.ResetPassword)
+}
 
 type AuthController interface {
 	Register(*gin.Context)
@@ -32,7 +47,8 @@ type authController struct {
 	authService services.AuthService
 }
 
-func NewAuth(
+
+func newAuth(
 	authService services.AuthService, 
 ) AuthController {
 	return &authController{
@@ -41,7 +57,7 @@ func NewAuth(
 }
 
 func (c *authController) Register(ctx *gin.Context) {
-	registerDTO := authDTOs.RegisterDTO{}
+	registerDTO := auth.RegisterDTO{}
  	err := ctx.ShouldBindJSON(&registerDTO)
 	if err != nil {
 		http_error_utils.HTTPError(
@@ -64,7 +80,7 @@ func (c *authController) Register(ctx *gin.Context) {
 }
 
 func (c *authController) Login(ctx *gin.Context) {
-	loginDTO := authDTOs.LoginDTO{}
+	loginDTO := auth.LoginDTO{}
 	ctx.Bind(&loginDTO)
 
 	userResponseDTO, err := c.authService.Login(&loginDTO)
@@ -94,9 +110,8 @@ func (c *authController) Logout(ctx *gin.Context) {
 }
 
 func (c *authController) Me(ctx *gin.Context) {
-	session := sessions.Default(ctx)
-	userResponseDTO := session.Get("user")
-	if userResponseDTO == nil {
+	userResponseDTO, err := auth_utils.ExtractUser(ctx)
+	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusUnauthorized, 
 			"UNAUTHORIZED",
@@ -107,25 +122,11 @@ func (c *authController) Me(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &userResponseDTO)
 }
 
-func (c *authController) getUserId(ctx *gin.Context) (uint, error) {
-	session := sessions.Default(ctx)
-	val := session.Get("user")
-
-	var userResponseDTO *userDTOs.UserResponseDTO 
-	var ok bool
-
-	if userResponseDTO, ok = val.(*userDTOs.UserResponseDTO); !ok || userResponseDTO == nil {
-		return 0, fmt.Errorf("UNAUTHORIZED")
-	}
-
-	return userResponseDTO.Id, nil
-}
-
 func (c *authController) ChangePassword(ctx *gin.Context) {
-	changePasswordDTO := authDTOs.ChangePasswordDTO{}
+	changePasswordDTO := auth.ChangePasswordDTO{}
 	ctx.Bind(&changePasswordDTO)
 	
-	userId, err := c.getUserId(ctx)
+	user, err := auth_utils.ExtractUser(ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusUnauthorized, 
@@ -134,7 +135,7 @@ func (c *authController) ChangePassword(ctx *gin.Context) {
 		return
 	}
 
-	err = c.authService.ChangePassword(userId, &changePasswordDTO)
+	err = c.authService.ChangePassword(user.Id, &changePasswordDTO)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest, 
@@ -147,9 +148,51 @@ func (c *authController) ChangePassword(ctx *gin.Context) {
 }
 
 func (c *authController) RequestPasswordReset(ctx *gin.Context) {
-	panic("unimplemented")
+	requestPasswordResetDTO := auth.RequestPasswordResetDTO{}
+	err := ctx.ShouldBindJSON(&requestPasswordResetDTO)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest, 
+			err.Error(),
+		)
+		return
+	}
+
+	err = c.authService.RequestPasswordReset(&requestPasswordResetDTO)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest, 
+			err.Error(),
+		)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "OK",
+	})
 }
 
 func (c *authController) ResetPassword(ctx *gin.Context) {
-	panic("unimplemented")
+	resetPasswordDTO := auth.ResetPasswordDTO{}
+	err := ctx.ShouldBindJSON(&resetPasswordDTO)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest, 
+			err.Error(),
+		)
+		return
+	}
+
+	err = c.authService.ResetPassword(&resetPasswordDTO)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest, 
+			err.Error(),
+		)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "OK",
+	})
 }

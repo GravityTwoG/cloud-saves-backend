@@ -1,7 +1,7 @@
 package services
 
 import (
-	authDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
 	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
 	password_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/password-utils"
@@ -11,28 +11,30 @@ import (
 )
 
 type AuthService interface {
-	Register(dto *authDTOs.RegisterDTO) (*userDTOs.UserResponseDTO, error)
+	Register(dto *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error)
 	
-	Login(dto  *authDTOs.LoginDTO)  (*userDTOs.UserResponseDTO, error)
+	Login(dto  *auth.LoginDTO)  (*userDTOs.UserResponseDTO, error)
 	
-	ChangePassword(userId uint, dto *authDTOs.ChangePasswordDTO) error
+	ChangePassword(userId uint, dto *auth.ChangePasswordDTO) error
 	
-	RequestPasswordReset(userId uint, dto *authDTOs.RequestPasswordResetDTO) error
+	RequestPasswordReset(dto *auth.RequestPasswordResetDTO) error
 	
-	ResetPassword(userId uint, dto *authDTOs.ResetPasswordDTO) error
+	ResetPassword(dto *auth.ResetPasswordDTO) error
 }
 
 type authService struct {
 	db *gorm.DB
+	emailService EmailService
 }
 
-func NewAuth(db *gorm.DB) AuthService {
+func NewAuth(db *gorm.DB, emailService EmailService) AuthService {
 	return &authService{
 		db: db,
+		emailService: emailService,
 	}
 }
 
-func (s *authService) Register(registerDTO *authDTOs.RegisterDTO) (*userDTOs.UserResponseDTO, error) {
+func (s *authService) Register(registerDTO *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error) {
 	roleUser := models.Role{} 
 	err := s.db.Where(&models.Role{Name: "ROLE_USER"}).First(&roleUser).Error
 	if err != nil {
@@ -68,12 +70,9 @@ func (s *authService) Register(registerDTO *authDTOs.RegisterDTO) (*userDTOs.Use
 	return &userResponseDTO, nil
 }
 
-
-
 func (s *authService) Login(
-	loginDTO *authDTOs.LoginDTO,
+	loginDTO *auth.LoginDTO,
 ) (*userDTOs.UserResponseDTO, error) {
-
 	user := models.User{};
 
 	err := s.db.Preload("Role").Where(
@@ -85,6 +84,9 @@ func (s *authService) Login(
 
 	if !password_utils.ComparePasswords(user.Password, loginDTO.Password) {
 		return nil, fmt.Errorf("INCORRECT_USERNAME_OR_PASSWORD")
+	}
+	if user.IsBlocked {
+		return nil, fmt.Errorf("USER_IS_BLOCKED")
 	}
 
 	userResponseDTO := userDTOs.UserResponseDTO{
@@ -100,7 +102,7 @@ func (s *authService) Login(
 
 func (s *authService) ChangePassword(
 	userId uint,
-	changePasswordDTO *authDTOs.ChangePasswordDTO,
+	changePasswordDTO *auth.ChangePasswordDTO,
 ) error {
 	user := models.User{};
 
@@ -125,16 +127,64 @@ func (s *authService) ChangePassword(
 }
 
 func (s *authService) RequestPasswordReset(
-	userId uint,
-	requestPasswordResetDTO *authDTOs.RequestPasswordResetDTO,
+	requestPasswordResetDTO *auth.RequestPasswordResetDTO,
 ) error {
-	panic("unimplemented")
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		filter := models.User{Email: requestPasswordResetDTO.Email};
+		user := models.User{};
+		err := tx.Where(&filter).First(&user).Error
+		if err != nil {
+			return err
+		}
+
+		passwordRecoveryToken := models.PasswordRecoveryToken{
+			Token: password_utils.GenerateToken(),
+			User: user,
+		}
+	
+		err = tx.Create(&passwordRecoveryToken).Error
+		if err != nil {
+			return err
+		}
+	
+		err = s.emailService.SendPasswordResetEmail(
+			&user, 
+			passwordRecoveryToken.Token,
+		)
+	
+		return err
+	})
 }
 
 func (s *authService) ResetPassword(
-	userId uint,
-	resetPasswordDTO *authDTOs.ResetPasswordDTO,
+	resetPasswordDTO *auth.ResetPasswordDTO,
 ) error {
-	panic("unimplemented")
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		filter := models.PasswordRecoveryToken{Token: resetPasswordDTO.Token};
+		passwordRecoveryToken := models.PasswordRecoveryToken{};
+		err := tx.Where(&filter).Preload("User").First(&passwordRecoveryToken).Error
+		if err != nil {
+			return err
+		}
+		
+		user := passwordRecoveryToken.User
+		hashedPassword, err := password_utils.HashPassword(resetPasswordDTO.Password)
+		if err != nil {
+			return err
+		}
+		
+		user.Password = hashedPassword
+		err = tx.Save(&user).Error
+		if err != nil {
+			return err
+		}
+		
+		err = tx.Delete(&passwordRecoveryToken).Error
+		if err != nil {
+			return err	
+		}
+		
+		return nil
+	})
 }
 

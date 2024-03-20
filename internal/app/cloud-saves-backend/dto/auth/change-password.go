@@ -1,4 +1,4 @@
-package authDTOs
+package auth
 
 type ChangePasswordDTO struct {
 	OldPassword string `json:"oldPassword" binding:"required"`

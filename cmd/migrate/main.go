@@ -4,7 +4,10 @@ import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/initializers"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
 	password_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/password-utils"
+	"errors"
 	"log"
+
+	"gorm.io/gorm"
 )
 
 func init() {
@@ -30,16 +33,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	
+	err = initializers.DB.AutoMigrate(&models.PasswordRecoveryToken{})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	roleUser := models.Role{Name: "ROLE_USER"}
 	roleAdmin := models.Role{Name: "ROLE_ADMIN"}
 
 	err = initializers.DB.Create(&roleUser).Error
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
 		log.Fatal(err)
 	}
 	err = initializers.DB.Create(&roleAdmin).Error
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
 		log.Fatal(err)
 	}
 
@@ -57,7 +65,7 @@ func main() {
 	}
 	
 	err = initializers.DB.Create(&user).Error
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
 		log.Fatal(err)
 	}
 
