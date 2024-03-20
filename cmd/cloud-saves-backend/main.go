@@ -2,6 +2,7 @@ package main
 
 import (
 	"cloud-saves-backend/docs"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/config"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/controllers"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/email-sender"
@@ -12,28 +13,64 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 )
 
+var db *gorm.DB
+
 func init() {
+
 	err := initializers.LoadEnvVariables()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = initializers.ConnectToDB()
+	db, err = initializers.ConnectToDB(os.Getenv("DSN"))
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
+func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 	gob.Register(&user.UserResponseDTO{})
+
+	app := gin.New()
+
+	app.Use(
+		gin.Logger(),
+		middlewares.Recovery(recoveryHandler),
+		middlewares.CORS(conf.AllowedOrigins),
+		middlewares.Sessions(conf.RedisHost, conf.SessionSecret),
+	)
+
+	mailer := email_sender.NewEmailSender(
+		conf.EmailSenderName,
+		conf.EmailSenderAddress,
+		conf.EmailSenderPassword,
+		conf.EmailAuthAddress,
+		conf.EmailServerAddress,
+	)
+	apiBaseURL := conf.APIAddress + conf.APIPrefix
+	emailService := services.NewEmail(mailer, apiBaseURL)
+	authService := services.NewAuth(database, emailService)
+
+	apiRouter := app.Group(conf.APIPrefix)
+
+	controllers.AddAuthRoutes(apiRouter, authService)
+	controllers.AddRedirectRoutes(apiRouter)
+
+	docs.SwaggerInfo.BasePath = conf.APIPrefix
+	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	return app
+}
+
+func recoveryHandler(c *gin.Context, err interface{}) {
+	c.JSON(http.StatusInternalServerError, gin.H{"message": "INTERNAL_SERVER_ERROR"})
 }
 
 // @title           Cloud Saves API
@@ -48,57 +85,14 @@ func init() {
 // @BasePath  /
 // @securitydefinitions.apikey CookieAuth
 // @in cookie
-// @name session 
+// @name session
 func main() {
-	app := gin.New()
-	app.Use(gin.Logger())
-	app.Use(middlewares.Recovery(recoveryHandler))
-	
-	config := cors.DefaultConfig()
-  config.AllowOrigins = strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
-	config.AllowCredentials = true
-	app.Use(cors.New(config))
+	conf := config.LoadConfig()
+	app := createApp(db, conf)
 
-	store, err := redis.NewStore(10, "tcp", os.Getenv("REDIS_HOST"), "", []byte(os.Getenv("SESSION_SECRET")))
-	if err != nil {
-		log.Fatal(err)
+	if app == nil {
 		return
 	}
-	store.Options(sessions.Options{
-		HttpOnly: true, 
-		MaxAge: 86400, 
-		SameSite: http.SameSiteNoneMode,
-		Secure: true,
-		Path: "/",
-	})
-	
-  app.Use(sessions.Sessions("session", store))
 
-	apiPrefix := os.Getenv("API_PREFIX")
-	host := os.Getenv("API_ADDRESS")
-	apiBaseURL := host + apiPrefix
-
-	docs.SwaggerInfo.BasePath = apiPrefix
-	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	
-  apiRouter := app.Group(apiPrefix)
-	
-	mailer := email_sender.NewEmailSender(
-		os.Getenv("EMAIL_SENDER_NAME"), 
-		os.Getenv("EMAIL_SENDER_ADDRESS"), 
-		os.Getenv("EMAIL_SENDER_PASSWORD"), 
-		os.Getenv("EMAIL_AUTH_ADDRESS"), 
-		os.Getenv("EMAIL_SERVER_ADDRESS"),
-	)
-	emailService := services.NewEmail(mailer, apiBaseURL)
-	authService := services.NewAuth(initializers.DB, emailService)
-	
-	controllers.AddAuthRoutes(apiRouter, authService)
-	controllers.AddRedirectRoutes(apiRouter)
-	
 	app.Run()
-}
-
-func recoveryHandler(c *gin.Context, err interface{}) {
-	c.JSON(http.StatusInternalServerError, gin.H{"message": "INTERNAL_SERVER_ERROR"})
 }
