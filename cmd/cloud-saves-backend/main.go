@@ -1,8 +1,9 @@
 package main
 
 import (
+	"cloud-saves-backend/docs"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/controllers"
-	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/email-sender"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/initializers"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
@@ -17,6 +18,8 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func init() {
@@ -29,8 +32,23 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	gob.Register(&user.UserResponseDTO{})
 }
 
+// @title           Cloud Saves API
+// @version         1.0
+// @description     This is a cloud saves backend API
+
+// @contact.name   Marsel Abazbekov
+// @contact.url    https://github.com/GravityTwoG
+// @contact.email  marsel.ave@gmail.com
+
+// @host      localhost:8080
+// @BasePath  /
+// @securitydefinitions.apikey CookieAuth
+// @in cookie
+// @name session 
 func main() {
 	app := gin.New()
 	app.Use(gin.Logger())
@@ -53,14 +71,18 @@ func main() {
 		Secure: true,
 		Path: "/",
 	})
-	gob.Register(&userDTOs.UserResponseDTO{})
+	
   app.Use(sessions.Sessions("session", store))
 
 	apiPrefix := os.Getenv("API_PREFIX")
-	apiBaseURL := os.Getenv("API_ADDRESS") + apiPrefix
+	host := os.Getenv("API_ADDRESS")
+	apiBaseURL := host + apiPrefix
 
+	docs.SwaggerInfo.BasePath = apiPrefix
+	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	
   apiRouter := app.Group(apiPrefix)
-
+	
 	mailer := email_sender.NewEmailSender(
 		os.Getenv("EMAIL_SENDER_NAME"), 
 		os.Getenv("EMAIL_SENDER_ADDRESS"), 
@@ -73,7 +95,7 @@ func main() {
 	
 	controllers.AddAuthRoutes(apiRouter, authService)
 	controllers.AddRedirectRoutes(apiRouter)
-
+	
 	app.Run()
 }
 

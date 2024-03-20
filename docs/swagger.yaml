@@ -1,0 +1,233 @@
+basePath: /
+definitions:
+  auth.ChangePasswordDTO:
+    properties:
+      newPassword:
+        maxLength: 64
+        minLength: 8
+        type: string
+      oldPassword:
+        type: string
+    required:
+    - newPassword
+    - oldPassword
+    type: object
+  auth.LoginDTO:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  auth.RegisterDTO:
+    properties:
+      email:
+        maxLength: 256
+        type: string
+      password:
+        maxLength: 64
+        minLength: 8
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  auth.RequestPasswordResetDTO:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  auth.ResetPasswordDTO:
+    properties:
+      password:
+        maxLength: 64
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - password
+    - token
+    type: object
+  user.UserResponseDTO:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      isBlocked:
+        type: boolean
+      role:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: marsel.ave@gmail.com
+    name: Marsel Abazbekov
+    url: https://github.com/GravityTwoG
+  description: This is a cloud saves backend API
+  title: Cloud Saves API
+  version: "1.0"
+paths:
+  /auth/auth-change-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ChangePasswordDTO
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ChangePasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - CookieAuth: []
+      summary: Change user password
+      tags:
+      - Auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: LoginDTO
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UserResponseDTO'
+      summary: Login
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - CookieAuth: []
+      summary: Logout
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.UserResponseDTO'
+      security:
+      - CookieAuth: []
+      summary: Get current user
+      tags:
+      - Auth
+  /auth/recover-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: RequestPasswordResetDTO
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RequestPasswordResetDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Request password reset
+      tags:
+      - Auth
+  /auth/registration:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: RegisterDTO
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/user.UserResponseDTO'
+      summary: Register new user
+      tags:
+      - Auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ResetPasswordDTO
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ResetPasswordDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Reset password
+      tags:
+      - Auth
+  /redirect:
+    get:
+      parameters:
+      - description: Redirect URL
+        in: query
+        name: redirect-to
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirected
+          schema:
+            type: string
+      summary: Redirect to a given URL
+      tags:
+      - Redirect
+securityDefinitions:
+  CookieAuth:
+    in: cookie
+    name: session
+    type: apiKey
+swagger: "2.0"

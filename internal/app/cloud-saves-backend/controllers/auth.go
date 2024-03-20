@@ -56,6 +56,13 @@ func newAuth(
 	}
 }
 
+// @Tags Auth
+// @Summary Register new user
+// @Accept json
+// @Produce json
+// @Param body body auth.RegisterDTO true "RegisterDTO"
+// @Success 201 {object} user.UserResponseDTO
+// @Router /auth/registration [post]
 func (c *authController) Register(ctx *gin.Context) {
 	registerDTO := auth.RegisterDTO{}
  	err := ctx.ShouldBindJSON(&registerDTO)
@@ -79,6 +86,13 @@ func (c *authController) Register(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, userResponseDTO)
 }
 
+// @Tags Auth
+// @Summary Login
+// @Accept json
+// @Produce json
+// @Param body body auth.LoginDTO true "LoginDTO"
+// @Success 200 {object} user.UserResponseDTO
+// @Router /auth/login [post]
 func (c *authController) Login(ctx *gin.Context) {
 	loginDTO := auth.LoginDTO{}
 	ctx.Bind(&loginDTO)
@@ -99,6 +113,12 @@ func (c *authController) Login(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, userResponseDTO)
 }
 
+// @Tags Auth
+// @Summary Logout
+// @Security CookieAuth
+// @Produce json
+// @Success 200
+// @Router /auth/logout [post]
 func (c *authController) Logout(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	session.Delete("user")
@@ -109,6 +129,12 @@ func (c *authController) Logout(ctx *gin.Context) {
 	})
 }
 
+// @Tags Auth
+// @Summary Get current user
+// @Security CookieAuth
+// @Produce json
+// @Success 200 {object} user.UserResponseDTO
+// @Router /auth/me [get]
 func (c *authController) Me(ctx *gin.Context) {
 	userResponseDTO, err := auth_utils.ExtractUser(ctx)
 	if err != nil {
@@ -122,6 +148,14 @@ func (c *authController) Me(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, &userResponseDTO)
 }
 
+// @Tags Auth
+// @Summary Change user password
+// @Security CookieAuth
+// @Accept json
+// @Produce json
+// @Param body body auth.ChangePasswordDTO true "ChangePasswordDTO"
+// @Success 200
+// @Router /auth/auth-change-password [post]
 func (c *authController) ChangePassword(ctx *gin.Context) {
 	changePasswordDTO := auth.ChangePasswordDTO{}
 	ctx.Bind(&changePasswordDTO)
@@ -147,6 +181,13 @@ func (c *authController) ChangePassword(ctx *gin.Context) {
 	ctx.Status(http.StatusOK)
 }
 
+// @Tags Auth
+// @Summary Request password reset
+// @Accept json
+// @Produce json
+// @Param body body auth.RequestPasswordResetDTO true "RequestPasswordResetDTO"
+// @Success 200
+// @Router /auth/recover-password [post]
 func (c *authController) RequestPasswordReset(ctx *gin.Context) {
 	requestPasswordResetDTO := auth.RequestPasswordResetDTO{}
 	err := ctx.ShouldBindJSON(&requestPasswordResetDTO)
@@ -172,6 +213,13 @@ func (c *authController) RequestPasswordReset(ctx *gin.Context) {
 	})
 }
 
+// @Tags Auth
+// @Summary Reset password
+// @Accept json
+// @Produce json
+// @Param body body auth.ResetPasswordDTO true "ResetPasswordDTO"
+// @Success 200
+// @Router /auth/reset-password [post]
 func (c *authController) ResetPassword(ctx *gin.Context) {
 	resetPasswordDTO := auth.ResetPasswordDTO{}
 	err := ctx.ShouldBindJSON(&resetPasswordDTO)
