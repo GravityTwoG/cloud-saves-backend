@@ -1,12 +1,12 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
+import "time"
 
 type PasswordRecoveryToken struct {
-	gorm.Model
-	Token  string `gorm:"unique;not null"`
-	UserID uint   `gorm:"unique;not null"`
-	User   User   `gorm:"onDelete:CASCADE"`
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Token     string `gorm:"unique;not null"`
+	UserID    uint   `gorm:"unique;not null"`
+	User      User   `gorm:"onDelete:CASCADE"`
 }

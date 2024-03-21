@@ -1,8 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import "time"
 
 type Role struct {
-	gorm.Model
-	Name string `gorm:"unique;not null"`
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string `gorm:"unique;not null"`
 }
