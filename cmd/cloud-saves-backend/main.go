@@ -8,7 +8,9 @@ import (
 	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/email-sender"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/initializers"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/repositories"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
+	"context"
 	"encoding/gob"
 	"log"
 	"net/http"
@@ -18,6 +20,12 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
+
+	trmgorm "github.com/avito-tech/go-transaction-manager/drivers/gorm/v2"
+
+	"github.com/avito-tech/go-transaction-manager/trm/v2"
+	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
+	"github.com/avito-tech/go-transaction-manager/trm/v2/settings"
 )
 
 var db *gorm.DB
@@ -56,7 +64,21 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 	)
 	apiBaseURL := conf.APIAddress + conf.APIPrefix
 	emailService := services.NewEmail(mailer, apiBaseURL)
-	authService := services.NewAuth(database, emailService)
+
+	trManager := manager.Must(
+		trmgorm.NewDefaultFactory(database),
+		manager.WithSettings(trmgorm.MustSettings(
+			settings.Must(
+				settings.WithPropagation(trm.PropagationNested))),
+		),
+	)
+
+	userRepo := repositories.NewUserRepository(database, trmgorm.DefaultCtxGetter)
+	roleRepo := repositories.NewRoleRepository(database, trmgorm.DefaultCtxGetter)
+	recoveryTokenRepo := repositories.NewPasswordRecoveryTokenRepository(database, trmgorm.DefaultCtxGetter)
+
+	ctx := context.Background()
+	authService := services.NewAuth(trManager, ctx, roleRepo, userRepo, recoveryTokenRepo, emailService)
 
 	apiRouter := app.Group(conf.APIPrefix)
 

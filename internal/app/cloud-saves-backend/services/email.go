@@ -14,17 +14,16 @@ type EmailService interface {
 }
 
 type emailService struct {
-	mailer email_sender.EmailSender
+	mailer     email_sender.EmailSender
 	apiBaseURL string
 }
 
 func NewEmail(mailer email_sender.EmailSender, apiBaseURL string) EmailService {
 	return &emailService{
-		mailer: mailer,
+		mailer:     mailer,
 		apiBaseURL: apiBaseURL,
 	}
 }
-
 
 func (s *emailService) SendPasswordResetEmail(
 	user *models.User,
@@ -39,8 +38,8 @@ func (s *emailService) SendPasswordResetEmail(
 		<a href="%s" href="%s/redirect/?redirect-to=%s" href="%s">link</a>
 		<br>
 		<br>
-		%s`, 
-		user.Username, 
+		%s`,
+		user.Username,
 		url,
 		s.apiBaseURL,
 		url,
