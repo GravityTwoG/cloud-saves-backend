@@ -3,7 +3,6 @@ package main
 import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/initializers"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
-	password_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/password-utils"
 	"errors"
 	"log"
 	"os"
@@ -41,8 +40,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	roleUser := models.Role{Name: "ROLE_USER"}
-	roleAdmin := models.Role{Name: "ROLE_ADMIN"}
+	roleUser := models.Role{Name: models.RoleUser}
+	roleAdmin := models.Role{Name: models.RoleAdmin}
 
 	err = db.Create(&roleUser).Error
 	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -53,17 +52,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	hashedPassword, err := password_utils.HashPassword("12121212")
+	user, err := models.NewUser(
+		"admin",
+		"admin@example.com",
+		"12121212",
+		&roleAdmin,
+	)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	user := models.User{
-		Username:  "admin",
-		Email:     "admin@example.com",
-		Password:  hashedPassword,
-		IsBlocked: false,
-		Role:      roleAdmin,
 	}
 
 	err = db.Create(&user).Error

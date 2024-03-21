@@ -4,7 +4,6 @@ import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
 	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
-	password_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/password-utils"
 	"context"
 	"fmt"
 
@@ -12,7 +11,7 @@ import (
 )
 
 type RoleRepository interface {
-	GetByName(ctx context.Context, name string) (*models.Role, error)
+	GetByName(ctx context.Context, name models.RoleName) (*models.Role, error)
 }
 
 type UserRepository interface {
@@ -74,25 +73,22 @@ func NewAuth(trManager trm.Manager, context context.Context, roleRepo RoleReposi
 }
 
 func (s *authService) Register(registerDTO *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error) {
-	roleUser, err := s.roleRepo.GetByName(s.context, "ROLE_USER")
+	roleUser, err := s.roleRepo.GetByName(s.context, models.RoleUser)
 	if err != nil {
 		return nil, err
 	}
 
-	hashedPassword, err := password_utils.HashPassword(registerDTO.Password)
+	user, err := models.NewUser(
+		registerDTO.Username,
+		registerDTO.Email,
+		registerDTO.Password,
+		roleUser,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	user := models.User{
-		Username:  registerDTO.Username,
-		Email:     registerDTO.Email,
-		Password:  hashedPassword,
-		IsBlocked: false,
-		Role:      *roleUser,
-	}
-
-	err = s.userRepo.Create(s.context, &user)
+	err = s.userRepo.Create(s.context, user)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +112,7 @@ func (s *authService) Login(
 		return nil, err
 	}
 
-	if !password_utils.ComparePasswords(user.Password, loginDTO.Password) {
+	if !user.ComparePassword(loginDTO.Password) {
 		return nil, fmt.Errorf("INCORRECT_USERNAME_OR_PASSWORD")
 	}
 	if user.IsBlocked {
@@ -143,19 +139,16 @@ func (s *authService) ChangePassword(
 		return err
 	}
 
-	if !password_utils.ComparePasswords(user.Password, changePasswordDTO.OldPassword) {
+	if !user.ComparePassword(changePasswordDTO.OldPassword) {
 		return fmt.Errorf("INCORRECT_USERNAME_OR_PASSWORD")
 	}
 
-	hashedPassword, err := password_utils.HashPassword(changePasswordDTO.NewPassword)
+	err = user.SetPassword(changePasswordDTO.NewPassword)
 	if err != nil {
 		return err
 	}
 
-	user.Password = hashedPassword
-	s.userRepo.Save(s.context, user)
-
-	return nil
+	return s.userRepo.Save(s.context, user)
 }
 
 func (s *authService) RequestPasswordReset(
@@ -168,26 +161,20 @@ func (s *authService) RequestPasswordReset(
 		}
 
 		// Get existing password recovery token
-		passwordRecoveryToken, err := s.recoveryRepo.GetByUserId(ctx, user.ID)
+		recoveryToken, err := s.recoveryRepo.GetByUserId(ctx, user.ID)
 		// If not found, create new one
 		if err != nil {
-			passwordRecoveryToken = &models.PasswordRecoveryToken{
-				Token: password_utils.GenerateToken(),
-				User:  *user,
-			}
-
-			err = s.recoveryRepo.Create(ctx, passwordRecoveryToken)
+			recoveryToken = models.NewPasswordRecoveryToken(user)
+			err = s.recoveryRepo.Create(ctx, recoveryToken)
 			if err != nil {
 				return err
 			}
 		}
 
-		err = s.emailService.SendPasswordResetEmail(
+		return s.emailService.SendPasswordResetEmail(
 			user,
-			passwordRecoveryToken.Token,
+			recoveryToken.Token,
 		)
-
-		return err
 	})
 }
 
@@ -195,29 +182,22 @@ func (s *authService) ResetPassword(
 	resetPasswordDTO *auth.ResetPasswordDTO,
 ) error {
 	return s.trManager.Do(s.context, func(ctx context.Context) error {
-
 		passwordRecoveryToken, err := s.recoveryRepo.GetByToken(ctx, resetPasswordDTO.Token)
 		if err != nil {
 			return err
 		}
 
 		user := passwordRecoveryToken.User
-		hashedPassword, err := password_utils.HashPassword(resetPasswordDTO.Password)
+		err = user.SetPassword(resetPasswordDTO.Password)
 		if err != nil {
 			return err
 		}
 
-		user.Password = hashedPassword
 		err = s.userRepo.Save(ctx, &user)
 		if err != nil {
 			return err
 		}
 
-		err = s.recoveryRepo.Delete(ctx, passwordRecoveryToken)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return s.recoveryRepo.Delete(ctx, passwordRecoveryToken)
 	})
 }

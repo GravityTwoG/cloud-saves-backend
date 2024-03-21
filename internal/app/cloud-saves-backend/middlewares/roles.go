@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/utils/auth"
 	"net/http"
 	"slices"
@@ -8,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Roles(roles []string) gin.HandlerFunc {
+func Roles(roles []models.RoleName) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		user, err := auth.ExtractUser(ctx)
 		if err != nil {
@@ -18,7 +19,7 @@ func Roles(roles []string) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		
+
 		if user.IsBlocked {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
 				"message": "USER_IS_BLOCKED",
@@ -34,7 +35,7 @@ func Roles(roles []string) gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		
+
 		ctx.Next()
 	}
 }

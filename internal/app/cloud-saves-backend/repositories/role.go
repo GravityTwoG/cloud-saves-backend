@@ -22,11 +22,11 @@ func NewRoleRepository(db *gorm.DB, getter *trmgorm.CtxGetter) services.RoleRepo
 	}
 }
 
-func (r *roleRepo) GetByName(ctx context.Context, name string) (*models.Role, error) {
+func (r *roleRepo) GetByName(ctx context.Context, name models.RoleName) (*models.Role, error) {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
 	role := models.Role{}
-	err := db.Where(&models.Role{Name: "ROLE_USER"}).First(&role).Error
+	err := db.Where(&models.Role{Name: name}).First(&role).Error
 	if err != nil {
 		return nil, err
 	}
