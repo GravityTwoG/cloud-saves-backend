@@ -14,18 +14,6 @@ type RoleRepository interface {
 	GetByName(ctx context.Context, name models.RoleName) (*models.Role, error)
 }
 
-type UserRepository interface {
-	Create(ctx context.Context, user *models.User) error
-
-	Save(ctx context.Context, user *models.User) error
-
-	GetByEmail(ctx context.Context, email string) (*models.User, error)
-
-	GetByUsername(ctx context.Context, username string) (*models.User, error)
-
-	GetById(ctx context.Context, userId uint) (*models.User, error)
-}
-
 type PasswordRecoveryTokenRepository interface {
 	Create(ctx context.Context, token *models.PasswordRecoveryToken) error
 

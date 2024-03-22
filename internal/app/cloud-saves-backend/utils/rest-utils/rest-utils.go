@@ -21,3 +21,12 @@ func DecodeURI[T any](ctx *gin.Context) (T, error) {
 	}
 	return dto, nil
 }
+
+func DecodeQuery[T any](ctx *gin.Context) (T, error) {
+	var dto T
+	err := ctx.ShouldBindQuery(&dto)
+	if err != nil {
+		return dto, err
+	}
+	return dto, nil
+}

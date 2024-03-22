@@ -59,6 +59,15 @@ definitions:
     - password
     - token
     type: object
+  controllers.UsersResponseDTO:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/user.UserResponseDTO'
+        type: array
+      totalCount:
+        type: integer
+    type: object
   models.RoleName:
     enum:
     - ROLE_USER
@@ -271,6 +280,37 @@ paths:
       summary: Redirect to a given URL
       tags:
       - Redirect
+  /users:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Page number
+        in: query
+        name: pageNumber
+        required: true
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      - description: Search query
+        in: query
+        name: searchQuery
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.UsersResponseDTO'
+      security:
+      - CookieAuth: []
+      summary: Get users
+      tags:
+      - Users
 securityDefinitions:
   CookieAuth:
     in: cookie

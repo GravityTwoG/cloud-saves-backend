@@ -84,10 +84,12 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 
 	ctx := context.Background()
 	authService := services.NewAuth(trManager, ctx, roleRepo, userRepo, recoveryTokenRepo, emailService)
+	userService := services.NewUser(userRepo)
 
 	apiRouter := app.Group(conf.APIPrefix)
 
 	controllers.AddAuthRoutes(apiRouter, authService, sessionsStore)
+	controllers.AddUserRoutes(apiRouter, userService)
 	controllers.AddRedirectRoutes(apiRouter)
 
 	docs.SwaggerInfo.BasePath = conf.APIPrefix
