@@ -48,6 +48,10 @@ type AuthService interface {
 	RequestPasswordReset(dto *auth.RequestPasswordResetDTO) error
 
 	ResetPassword(dto *auth.ResetPasswordDTO) error
+
+	BlockUser(userId uint) error
+
+	UnblockUser(userId uint) error
 }
 
 type authService struct {
@@ -200,4 +204,26 @@ func (s *authService) ResetPassword(
 
 		return s.recoveryRepo.Delete(ctx, passwordRecoveryToken)
 	})
+}
+
+func (s *authService) BlockUser(userId uint) error {
+	user, err := s.userRepo.GetById(s.context, userId)
+	if err != nil {
+		return err
+	}
+
+	user.IsBlocked = true
+
+	return s.userRepo.Save(s.context, user)
+}
+
+func (s *authService) UnblockUser(userId uint) error {
+	user, err := s.userRepo.GetById(s.context, userId)
+	if err != nil {
+		return err
+	}
+
+	user.IsBlocked = false
+
+	return s.userRepo.Save(s.context, user)
 }

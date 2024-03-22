@@ -54,6 +54,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/block-user/{userId}": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Block user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "consumes": [
@@ -225,6 +257,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/unblock-user/{userId}": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Unblock user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/redirect": {
             "get": {
                 "tags": [
@@ -336,6 +400,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.RoleName": {
+            "type": "string",
+            "enum": [
+                "ROLE_USER",
+                "ROLE_ADMIN"
+            ],
+            "x-enum-varnames": [
+                "RoleUser",
+                "RoleAdmin"
+            ]
+        },
         "user.UserResponseDTO": {
             "type": "object",
             "properties": {
@@ -349,7 +424,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "role": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.RoleName"
                 },
                 "username": {
                     "type": "string"

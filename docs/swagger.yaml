@@ -59,6 +59,14 @@ definitions:
     - password
     - token
     type: object
+  models.RoleName:
+    enum:
+    - ROLE_USER
+    - ROLE_ADMIN
+    type: string
+    x-enum-varnames:
+    - RoleUser
+    - RoleAdmin
   user.UserResponseDTO:
     properties:
       email:
@@ -68,7 +76,7 @@ definitions:
       isBlocked:
         type: boolean
       role:
-        type: string
+        $ref: '#/definitions/models.RoleName'
       username:
         type: string
     type: object
@@ -101,6 +109,25 @@ paths:
       security:
       - CookieAuth: []
       summary: Change user password
+      tags:
+      - Auth
+  /auth/block-user/{userId}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - CookieAuth: []
+      summary: Block user
       tags:
       - Auth
   /auth/login:
@@ -207,6 +234,25 @@ paths:
         "200":
           description: OK
       summary: Reset password
+      tags:
+      - Auth
+  /auth/unblock-user/{userId}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      security:
+      - CookieAuth: []
+      summary: Unblock user
       tags:
       - Auth
   /redirect:

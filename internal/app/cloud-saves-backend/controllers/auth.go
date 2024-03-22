@@ -3,10 +3,11 @@ package controllers
 import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
 	auth_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/auth"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
-	json_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/json-utils"
+	rest_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/rest-utils"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -25,6 +26,11 @@ func AddAuthRoutes(router *gin.RouterGroup, authService services.AuthService) {
 	authRouter.POST("/auth-change-password", middlewares.Auth, authController.ChangePassword)
 	authRouter.POST("/recover-password", middlewares.Unauthorized, authController.RequestPasswordReset)
 	authRouter.POST("/change-password", middlewares.Unauthorized, authController.ResetPassword)
+
+	onlyAdmin := middlewares.Roles([]models.RoleName{models.RoleAdmin})
+
+	authRouter.POST("/block-user/:userId", onlyAdmin, authController.BlockUser)
+	authRouter.POST("/unblock-user/:userId", onlyAdmin, authController.UnblockUser)
 }
 
 type AuthController interface {
@@ -41,6 +47,10 @@ type AuthController interface {
 	RequestPasswordReset(*gin.Context)
 
 	ResetPassword(*gin.Context)
+
+	BlockUser(*gin.Context)
+
+	UnblockUser(*gin.Context)
 }
 
 type authController struct {
@@ -63,7 +73,7 @@ func newAuth(
 // @Success 201 {object} user.UserResponseDTO
 // @Router /auth/registration [post]
 func (c *authController) Register(ctx *gin.Context) {
-	registerDTO, err := json_utils.Decode[auth.RegisterDTO](ctx)
+	registerDTO, err := rest_utils.DecodeJSON[auth.RegisterDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -92,7 +102,7 @@ func (c *authController) Register(ctx *gin.Context) {
 // @Success 200 {object} user.UserResponseDTO
 // @Router /auth/login [post]
 func (c *authController) Login(ctx *gin.Context) {
-	loginDTO, err := json_utils.Decode[auth.LoginDTO](ctx)
+	loginDTO, err := rest_utils.DecodeJSON[auth.LoginDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -161,7 +171,7 @@ func (c *authController) Me(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/auth-change-password [post]
 func (c *authController) ChangePassword(ctx *gin.Context) {
-	changePasswordDTO, err := json_utils.Decode[auth.ChangePasswordDTO](ctx)
+	changePasswordDTO, err := rest_utils.DecodeJSON[auth.ChangePasswordDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -199,7 +209,7 @@ func (c *authController) ChangePassword(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/recover-password [post]
 func (c *authController) RequestPasswordReset(ctx *gin.Context) {
-	requestPasswordResetDTO, err := json_utils.Decode[auth.RequestPasswordResetDTO](ctx)
+	requestPasswordResetDTO, err := rest_utils.DecodeJSON[auth.RequestPasswordResetDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -230,7 +240,7 @@ func (c *authController) RequestPasswordReset(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/reset-password [post]
 func (c *authController) ResetPassword(ctx *gin.Context) {
-	resetPasswordDTO, err := json_utils.Decode[auth.ResetPasswordDTO](ctx)
+	resetPasswordDTO, err := rest_utils.DecodeJSON[auth.ResetPasswordDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -240,6 +250,104 @@ func (c *authController) ResetPassword(ctx *gin.Context) {
 	}
 
 	err = c.authService.ResetPassword(&resetPasswordDTO)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "OK",
+	})
+}
+
+// @Tags Auth
+// @Summary Block user
+// @Security CookieAuth
+// @Accept json
+// @Produce json
+// @Param userId path auth.BlockUserDTO true "User ID"
+// @Success 200
+// @Router /auth/block-user/{userId} [post]
+func (c *authController) BlockUser(ctx *gin.Context) {
+	dto, err := rest_utils.DecodeURI[auth.BlockUserDTO](ctx)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
+	user, err := auth_utils.ExtractUser(ctx)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusUnauthorized,
+			err.Error(),
+		)
+		return
+	}
+	if user.Id == dto.UserId {
+		http_error_utils.HTTPError(
+			ctx, http.StatusForbidden,
+			"CANNOT_BLOCK_YOURSELF",
+		)
+		return
+	}
+
+	err = c.authService.BlockUser(dto.UserId)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
+	// TODO: clear all sessions of user
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "OK",
+	})
+}
+
+// @Tags Auth
+// @Summary Unblock user
+// @Security CookieAuth
+// @Accept json
+// @Produce json
+// @Param userId path auth.BlockUserDTO true "BlockUserDTO"
+// @Success 200
+// @Router /auth/unblock-user/{userId} [post]
+func (c *authController) UnblockUser(ctx *gin.Context) {
+	dto, err := rest_utils.DecodeURI[auth.BlockUserDTO](ctx)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusBadRequest,
+			err.Error(),
+		)
+		return
+	}
+
+	user, err := auth_utils.ExtractUser(ctx)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusForbidden,
+			err.Error(),
+		)
+		return
+	}
+	if user.Id == dto.UserId {
+		http_error_utils.HTTPError(
+			ctx, http.StatusForbidden,
+			"CANNOT_UNBLOCK_YOURSELF",
+		)
+		return
+	}
+
+	err = c.authService.UnblockUser(dto.UserId)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
