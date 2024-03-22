@@ -10,6 +10,7 @@ import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/repositories"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
 	"context"
 	"encoding/gob"
 	"log"
@@ -48,11 +49,15 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 
 	app := gin.New()
 
+	sessionsStore, err := sessions_store.NewStore(10, "tcp", conf.RedisHost, "", conf.SessionSecret)
+	if err != nil {
+		log.Fatal(err)
+	}
 	app.Use(
 		gin.Logger(),
 		middlewares.Recovery(recoveryHandler),
 		middlewares.CORS(conf.AllowedOrigins),
-		middlewares.Sessions(conf.RedisHost, conf.SessionSecret),
+		middlewares.Sessions(sessionsStore),
 	)
 
 	mailer := email_sender.NewEmailSender(
@@ -82,7 +87,7 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 
 	apiRouter := app.Group(conf.APIPrefix)
 
-	controllers.AddAuthRoutes(apiRouter, authService)
+	controllers.AddAuthRoutes(apiRouter, authService, sessionsStore)
 	controllers.AddRedirectRoutes(apiRouter)
 
 	docs.SwaggerInfo.BasePath = conf.APIPrefix

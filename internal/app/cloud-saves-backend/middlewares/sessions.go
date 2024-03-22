@@ -1,25 +1,20 @@
 package middlewares
 
 import (
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
 	"net/http"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 )
 
-func Sessions(redisHost string, sessionSecret []byte) gin.HandlerFunc {
-	store, err := redis.NewStore(10, "tcp", redisHost, "", sessionSecret)
-	if err != nil {
-		panic(err)
-	}
-
-	store.Options(sessions.Options{
+func Sessions(store sessions_store.Store) gin.HandlerFunc {
+	store.SetOptions(&sessions.Options{
 		HttpOnly: true,
 		MaxAge:   86400,
 		SameSite: http.SameSiteNoneMode,
 		Secure:   true,
 		Path:     "/",
 	})
-	return sessions.Sessions("session", store)
+	return sessions_store.Sessions("session", store)
 }

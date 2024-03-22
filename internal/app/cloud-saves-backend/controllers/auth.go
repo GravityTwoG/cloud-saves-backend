@@ -5,17 +5,20 @@ import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
 	auth_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/auth"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
 	rest_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/rest-utils"
+	"fmt"
+	"log"
 	"net/http"
+	"strings"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-func AddAuthRoutes(router *gin.RouterGroup, authService services.AuthService) {
-	authController := newAuth(authService)
+func AddAuthRoutes(router *gin.RouterGroup, authService services.AuthService, sessionsStore sessions_store.Store) {
+	authController := newAuth(authService, sessionsStore)
 
 	authRouter := router.Group("/auth")
 
@@ -54,14 +57,17 @@ type AuthController interface {
 }
 
 type authController struct {
-	authService services.AuthService
+	authService   services.AuthService
+	sessionsStore sessions_store.Store
 }
 
 func newAuth(
 	authService services.AuthService,
+	sessionsStore sessions_store.Store,
 ) AuthController {
 	return &authController{
-		authService: authService,
+		authService:   authService,
+		sessionsStore: sessionsStore,
 	}
 }
 
@@ -120,8 +126,12 @@ func (c *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	session := sessions.Default(ctx)
+	session := sessions_store.Default(ctx)
 	session.Set("user", userResponseDTO)
+	c.sessionsStore.AddKey(
+		"sessionIduserId",
+		fmt.Sprintf("%s:%s", session.ID(), fmt.Sprint(userResponseDTO.Id)),
+	)
 	session.Save()
 
 	ctx.JSON(http.StatusOK, userResponseDTO)
@@ -134,8 +144,20 @@ func (c *authController) Login(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/logout [post]
 func (c *authController) Logout(ctx *gin.Context) {
-	session := sessions.Default(ctx)
+	user, err := auth_utils.ExtractUser(ctx)
+	if err != nil {
+		http_error_utils.HTTPError(
+			ctx, http.StatusUnauthorized,
+			err.Error(),
+		)
+		return
+	}
+	session := sessions_store.Default(ctx)
 	session.Delete("user")
+	c.sessionsStore.DeleteKey(
+		"sessionIduserId",
+		fmt.Sprintf("%s:%s", session.ID(), fmt.Sprint(user.Id)),
+	)
 	session.Save()
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -306,7 +328,34 @@ func (c *authController) BlockUser(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: clear all sessions of user
+	// clear all sessions of user
+	keys, err := c.sessionsStore.GetKeys(
+		"sessionIduserId",
+		fmt.Sprintf("*:%d", dto.UserId),
+	)
+	if err != nil {
+		log.Println("Failed to get keys:", err)
+	} else {
+		sessionIds := make([]string, len(keys))
+		for i, key := range keys {
+			parts := strings.Split(key, ":")
+			if len(parts) != 2 {
+				continue
+			}
+			sessionIds[i] = parts[0]
+		}
+		err = c.sessionsStore.DeleteKeys(
+			"sessionIduserId",
+			keys,
+		)
+		if err != nil {
+			log.Println("Failed to delete keys:", err)
+		}
+		err = c.sessionsStore.DeleteSessions(sessionIds)
+		if err != nil {
+			log.Println("Failed to delete keys:", err)
+		}
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "OK",
