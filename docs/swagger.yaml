@@ -59,15 +59,6 @@ definitions:
     - password
     - token
     type: object
-  controllers.UsersResponseDTO:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/user.UserResponseDTO'
-        type: array
-      totalCount:
-        type: integer
-    type: object
   models.RoleName:
     enum:
     - ROLE_USER
@@ -88,6 +79,15 @@ definitions:
         $ref: '#/definitions/models.RoleName'
       username:
         type: string
+    type: object
+  user.UsersResponseDTO:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/user.UserResponseDTO'
+        type: array
+      totalCount:
+        type: integer
     type: object
 host: localhost:8080
 info:
@@ -305,7 +305,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.UsersResponseDTO'
+            $ref: '#/definitions/user.UsersResponseDTO'
       security:
       - CookieAuth: []
       summary: Get users

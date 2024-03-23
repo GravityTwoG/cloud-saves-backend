@@ -28,7 +28,7 @@ type UserService interface {
 	GetUsers(
 		ctx context.Context,
 		dto common.GetResourceDTO,
-	) (*common.ResourceDTO[user.UserResponseDTO], error)
+	) (*user.UsersResponseDTO, error)
 }
 
 type userService struct {
@@ -44,20 +44,11 @@ func NewUser(userRepo UserRepository) UserService {
 func (s *userService) GetUsers(
 	ctx context.Context,
 	dto common.GetResourceDTO,
-) (*common.ResourceDTO[user.UserResponseDTO], error) {
+) (*user.UsersResponseDTO, error) {
 	users, err := s.userRepo.GetAll(ctx, dto)
 	if err != nil {
 		return nil, err
 	}
 
-	usersDto := &common.ResourceDTO[user.UserResponseDTO]{
-		Items:      make([]user.UserResponseDTO, len(users.Items)),
-		TotalCount: users.TotalCount,
-	}
-
-	for i, user := range users.Items {
-		usersDto.Items[i].FromUser(&user)
-	}
-
-	return usersDto, nil
+	return user.FromUsers(users), nil
 }

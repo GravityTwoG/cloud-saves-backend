@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/common"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
@@ -36,12 +35,6 @@ func newUser(
 	}
 }
 
-// just for swag
-type UsersResponseDTO struct {
-	Items      []user.UserResponseDTO `json:"items"`
-	TotalCount int                    `json:"totalCount"`
-}
-
 // @Tags Users
 // @Summary Get users
 // @Security CookieAuth
@@ -50,7 +43,7 @@ type UsersResponseDTO struct {
 // @Param pageNumber query int true "Page number"
 // @Param pageSize query int true "Page size"
 // @Param searchQuery query string false "Search query"
-// @Success 200 {object} UsersResponseDTO
+// @Success 200 {object} user.UsersResponseDTO
 // @Router /users [get]
 func (c *userController) GetUsers(ctx *gin.Context) {
 	dto, err := rest_utils.DecodeQuery[common.GetResourceDTO](ctx)

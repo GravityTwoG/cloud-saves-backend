@@ -357,7 +357,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/controllers.UsersResponseDTO"
+                            "$ref": "#/definitions/user.UsersResponseDTO"
                         }
                     }
                 }
@@ -449,20 +449,6 @@ const docTemplate = `{
                 }
             }
         },
-        "controllers.UsersResponseDTO": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/user.UserResponseDTO"
-                    }
-                },
-                "totalCount": {
-                    "type": "integer"
-                }
-            }
-        },
         "models.RoleName": {
             "type": "string",
             "enum": [
@@ -491,6 +477,20 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "user.UsersResponseDTO": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user.UserResponseDTO"
+                    }
+                },
+                "totalCount": {
+                    "type": "integer"
                 }
             }
         }

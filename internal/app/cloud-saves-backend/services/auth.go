@@ -85,15 +85,7 @@ func (s *authService) Register(registerDTO *auth.RegisterDTO) (*userDTOs.UserRes
 		return nil, err
 	}
 
-	userResponseDTO := userDTOs.UserResponseDTO{
-		Id:        user.ID,
-		Email:     user.Email,
-		Username:  user.Username,
-		Role:      user.Role.Name,
-		IsBlocked: user.IsBlocked,
-	}
-
-	return &userResponseDTO, nil
+	return userDTOs.FromUser(user), nil
 }
 
 func (s *authService) Login(
@@ -111,15 +103,7 @@ func (s *authService) Login(
 		return nil, fmt.Errorf("USER_IS_BLOCKED")
 	}
 
-	userResponseDTO := userDTOs.UserResponseDTO{
-		Id:        user.ID,
-		Email:     user.Email,
-		Username:  user.Username,
-		Role:      user.Role.Name,
-		IsBlocked: user.IsBlocked,
-	}
-
-	return &userResponseDTO, nil
+	return userDTOs.FromUser(user), nil
 }
 
 func (s *authService) ChangePassword(

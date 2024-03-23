@@ -10,11 +10,12 @@ type UserResponseDTO struct {
 	IsBlocked bool            `json:"isBlocked"`
 }
 
-func (u *UserResponseDTO) FromUser(user *models.User) *UserResponseDTO {
-	u.Id = user.ID
-	u.Email = user.Email
-	u.Username = user.Username
-	u.Role = user.Role.Name
-	u.IsBlocked = user.IsBlocked
-	return u
+func FromUser(user *models.User) *UserResponseDTO {
+	return &UserResponseDTO{
+		Id:        user.ID,
+		Email:     user.Email,
+		Username:  user.Username,
+		Role:      user.Role.Name,
+		IsBlocked: user.IsBlocked,
+	}
 }
