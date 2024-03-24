@@ -8,7 +8,7 @@ import (
 
 func AddRedirectRoutes(router *gin.RouterGroup) {
 	redirectController := newRedirect()
-	
+
 	router.GET("/redirect", redirectController.Redirect)
 }
 
@@ -16,7 +16,7 @@ type RedirectController interface {
 	Redirect(*gin.Context)
 }
 
-type redirectController struct {}
+type redirectController struct{}
 
 func newRedirect() RedirectController {
 	return &redirectController{}

@@ -25,6 +25,6 @@ func Auth(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	
+
 	ctx.Next()
 }

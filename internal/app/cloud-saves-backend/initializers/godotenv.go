@@ -5,6 +5,6 @@ import (
 )
 
 func LoadEnvVariables() (err error) {
-	err = godotenv.Load();
+	err = godotenv.Load()
 	return err
 }

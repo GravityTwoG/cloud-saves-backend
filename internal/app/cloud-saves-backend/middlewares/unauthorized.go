@@ -16,6 +16,6 @@ func Unauthorized(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	
+
 	ctx.Next()
 }
