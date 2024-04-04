@@ -11,7 +11,6 @@ import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/repositories"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
 	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
-	"context"
 	"encoding/gob"
 	"log"
 	"net/http"
@@ -82,8 +81,13 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 	roleRepo := repositories.NewRoleRepository(database, trmgorm.DefaultCtxGetter)
 	recoveryTokenRepo := repositories.NewPasswordRecoveryTokenRepository(database, trmgorm.DefaultCtxGetter)
 
-	ctx := context.Background()
-	authService := services.NewAuth(trManager, ctx, roleRepo, userRepo, recoveryTokenRepo, emailService)
+	authService := services.NewAuth(
+		trManager,
+		roleRepo,
+		userRepo,
+		recoveryTokenRepo,
+		emailService,
+	)
 	userService := services.NewUser(userRepo)
 
 	apiRouter := app.Group(conf.APIPrefix)

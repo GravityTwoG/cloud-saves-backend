@@ -88,7 +88,7 @@ func (c *authController) Register(ctx *gin.Context) {
 		return
 	}
 
-	userResponseDTO, err := c.authService.Register(&registerDTO)
+	userResponseDTO, err := c.authService.Register(ctx.Request.Context(), &registerDTO)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -117,7 +117,7 @@ func (c *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	userResponseDTO, err := c.authService.Login(&loginDTO)
+	userResponseDTO, err := c.authService.Login(ctx.Request.Context(), &loginDTO)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusUnauthorized,
@@ -211,7 +211,11 @@ func (c *authController) ChangePassword(ctx *gin.Context) {
 		return
 	}
 
-	err = c.authService.ChangePassword(user.Id, &changePasswordDTO)
+	err = c.authService.ChangePassword(
+		ctx.Request.Context(),
+		user.Id,
+		&changePasswordDTO,
+	)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -240,7 +244,10 @@ func (c *authController) RequestPasswordReset(ctx *gin.Context) {
 		return
 	}
 
-	err = c.authService.RequestPasswordReset(&requestPasswordResetDTO)
+	err = c.authService.RequestPasswordReset(
+		ctx.Request.Context(),
+		&requestPasswordResetDTO,
+	)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -271,7 +278,10 @@ func (c *authController) ResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	err = c.authService.ResetPassword(&resetPasswordDTO)
+	err = c.authService.ResetPassword(
+		ctx.Request.Context(),
+		&resetPasswordDTO,
+	)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -319,7 +329,7 @@ func (c *authController) BlockUser(ctx *gin.Context) {
 		return
 	}
 
-	err = c.authService.BlockUser(dto.UserId)
+	err = c.authService.BlockUser(ctx.Request.Context(), dto.UserId)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -396,7 +406,7 @@ func (c *authController) UnblockUser(ctx *gin.Context) {
 		return
 	}
 
-	err = c.authService.UnblockUser(dto.UserId)
+	err = c.authService.UnblockUser(ctx.Request.Context(), dto.UserId)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,

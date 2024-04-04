@@ -3,11 +3,13 @@ package services
 import (
 	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/email-sender"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
+	"context"
 	"fmt"
 )
 
 type EmailService interface {
 	SendPasswordResetEmail(
+		ctx context.Context,
 		user *models.User,
 		token string,
 	) error
@@ -26,6 +28,7 @@ func NewEmail(mailer email_sender.EmailSender, apiBaseURL string) EmailService {
 }
 
 func (s *emailService) SendPasswordResetEmail(
+	ctx context.Context,
 	user *models.User,
 	token string,
 ) error {

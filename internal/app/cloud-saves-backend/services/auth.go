@@ -27,24 +27,23 @@ type PasswordRecoveryTokenRepository interface {
 }
 
 type AuthService interface {
-	Register(dto *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error)
+	Register(ctx context.Context, dto *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error)
 
-	Login(dto *auth.LoginDTO) (*userDTOs.UserResponseDTO, error)
+	Login(ctx context.Context, dto *auth.LoginDTO) (*userDTOs.UserResponseDTO, error)
 
-	ChangePassword(userId uint, dto *auth.ChangePasswordDTO) error
+	ChangePassword(ctx context.Context, userId uint, dto *auth.ChangePasswordDTO) error
 
-	RequestPasswordReset(dto *auth.RequestPasswordResetDTO) error
+	RequestPasswordReset(ctx context.Context, dto *auth.RequestPasswordResetDTO) error
 
-	ResetPassword(dto *auth.ResetPasswordDTO) error
+	ResetPassword(ctx context.Context, dto *auth.ResetPasswordDTO) error
 
-	BlockUser(userId uint) error
+	BlockUser(ctx context.Context, userId uint) error
 
-	UnblockUser(userId uint) error
+	UnblockUser(ctx context.Context, userId uint) error
 }
 
 type authService struct {
 	trManager trm.Manager
-	context   context.Context
 
 	roleRepo     RoleRepository
 	userRepo     UserRepository
@@ -53,10 +52,15 @@ type authService struct {
 	emailService EmailService
 }
 
-func NewAuth(trManager trm.Manager, context context.Context, roleRepo RoleRepository, userRepo UserRepository, recoveryRepo PasswordRecoveryTokenRepository, emailService EmailService) AuthService {
+func NewAuth(
+	trManager trm.Manager,
+	roleRepo RoleRepository,
+	userRepo UserRepository,
+	recoveryRepo PasswordRecoveryTokenRepository,
+	emailService EmailService,
+) AuthService {
 	return &authService{
 		trManager:    trManager,
-		context:      context,
 		roleRepo:     roleRepo,
 		userRepo:     userRepo,
 		recoveryRepo: recoveryRepo,
@@ -64,8 +68,8 @@ func NewAuth(trManager trm.Manager, context context.Context, roleRepo RoleReposi
 	}
 }
 
-func (s *authService) Register(registerDTO *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error) {
-	roleUser, err := s.roleRepo.GetByName(s.context, models.RoleUser)
+func (s *authService) Register(ctx context.Context, registerDTO *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error) {
+	roleUser, err := s.roleRepo.GetByName(ctx, models.RoleUser)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +84,7 @@ func (s *authService) Register(registerDTO *auth.RegisterDTO) (*userDTOs.UserRes
 		return nil, err
 	}
 
-	err = s.userRepo.Create(s.context, user)
+	err = s.userRepo.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +93,10 @@ func (s *authService) Register(registerDTO *auth.RegisterDTO) (*userDTOs.UserRes
 }
 
 func (s *authService) Login(
+	ctx context.Context,
 	loginDTO *auth.LoginDTO,
 ) (*userDTOs.UserResponseDTO, error) {
-	user, err := s.userRepo.GetByUsername(s.context, loginDTO.Username)
+	user, err := s.userRepo.GetByUsername(ctx, loginDTO.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -107,10 +112,11 @@ func (s *authService) Login(
 }
 
 func (s *authService) ChangePassword(
+	ctx context.Context,
 	userId uint,
 	changePasswordDTO *auth.ChangePasswordDTO,
 ) error {
-	user, err := s.userRepo.GetById(s.context, userId)
+	user, err := s.userRepo.GetById(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -124,13 +130,14 @@ func (s *authService) ChangePassword(
 		return err
 	}
 
-	return s.userRepo.Save(s.context, user)
+	return s.userRepo.Save(ctx, user)
 }
 
 func (s *authService) RequestPasswordReset(
+	ctx context.Context,
 	requestPasswordResetDTO *auth.RequestPasswordResetDTO,
 ) error {
-	return s.trManager.Do(s.context, func(ctx context.Context) error {
+	return s.trManager.Do(ctx, func(ctx context.Context) error {
 		user, err := s.userRepo.GetByEmail(ctx, requestPasswordResetDTO.Email)
 		if err != nil {
 			return err
@@ -148,6 +155,7 @@ func (s *authService) RequestPasswordReset(
 		}
 
 		return s.emailService.SendPasswordResetEmail(
+			ctx,
 			user,
 			recoveryToken.Token,
 		)
@@ -155,9 +163,10 @@ func (s *authService) RequestPasswordReset(
 }
 
 func (s *authService) ResetPassword(
+	ctx context.Context,
 	resetPasswordDTO *auth.ResetPasswordDTO,
 ) error {
-	return s.trManager.Do(s.context, func(ctx context.Context) error {
+	return s.trManager.Do(ctx, func(ctx context.Context) error {
 		passwordRecoveryToken, err := s.recoveryRepo.GetByToken(ctx, resetPasswordDTO.Token)
 		if err != nil {
 			return err
@@ -178,24 +187,24 @@ func (s *authService) ResetPassword(
 	})
 }
 
-func (s *authService) BlockUser(userId uint) error {
-	user, err := s.userRepo.GetById(s.context, userId)
+func (s *authService) BlockUser(ctx context.Context, userId uint) error {
+	user, err := s.userRepo.GetById(ctx, userId)
 	if err != nil {
 		return err
 	}
 
 	user.IsBlocked = true
 
-	return s.userRepo.Save(s.context, user)
+	return s.userRepo.Save(ctx, user)
 }
 
-func (s *authService) UnblockUser(userId uint) error {
-	user, err := s.userRepo.GetById(s.context, userId)
+func (s *authService) UnblockUser(ctx context.Context, userId uint) error {
+	user, err := s.userRepo.GetById(ctx, userId)
 	if err != nil {
 		return err
 	}
 
 	user.IsBlocked = false
 
-	return s.userRepo.Save(s.context, user)
+	return s.userRepo.Save(ctx, user)
 }
