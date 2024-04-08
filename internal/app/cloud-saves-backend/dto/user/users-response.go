@@ -1,23 +1,23 @@
 package user
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/common"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
 )
 
 type UsersResponseDTO struct {
-	Items      []UserResponseDTO `json:"items"`
+	Items      []UserDTO `json:"items"`
 	TotalCount int               `json:"totalCount"`
 }
 
-func FromUsers(users *common.ResourceDTO[models.User]) *UsersResponseDTO {
+func FromUsers(users *common.ResourceDTO[user.User]) *UsersResponseDTO {
 	usersDto := &UsersResponseDTO{
-		Items:      make([]UserResponseDTO, len(users.Items)),
+		Items:      make([]UserDTO, len(users.Items)),
 		TotalCount: users.TotalCount,
 	}
 
-	for i, userModel := range users.Items {
-		usersDto.Items[i] = *FromUser(&userModel)
+	for i, user := range users.Items {
+		usersDto.Items[i] = *FromUser(&user)
 	}
 
 	return usersDto

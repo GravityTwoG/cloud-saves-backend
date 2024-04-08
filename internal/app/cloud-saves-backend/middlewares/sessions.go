@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/infra/sessions"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

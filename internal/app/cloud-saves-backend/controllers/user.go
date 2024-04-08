@@ -1,9 +1,10 @@
 package controllers
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/common"
+	user_dto "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
 	rest_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/rest-utils"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AddUserRoutes(router *gin.RouterGroup, userService services.UserService) {
+func AddUserRoutes(router *gin.RouterGroup, userService user.UserService) {
 	userController := newUser(userService)
 
 	authRouter := router.Group("/users")
@@ -24,11 +25,11 @@ type UserController interface {
 }
 
 type userController struct {
-	userService services.UserService
+	userService user.UserService
 }
 
 func newUser(
-	userService services.UserService,
+	userService user.UserService,
 ) UserController {
 	return &userController{
 		userService: userService,
@@ -63,5 +64,5 @@ func (c *userController) GetUsers(ctx *gin.Context) {
 		)
 		return
 	}
-	ctx.JSON(http.StatusOK, users)
+	ctx.JSON(http.StatusOK, user_dto.FromUsers(users))
 }

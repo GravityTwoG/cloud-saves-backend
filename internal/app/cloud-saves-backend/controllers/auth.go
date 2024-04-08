@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/auth"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
+	auth_dto "cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
+	user_dto "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/infra/sessions"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
-	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
 	auth_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/auth"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
 	rest_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/rest-utils"
@@ -17,7 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AddAuthRoutes(router *gin.RouterGroup, authService services.AuthService, sessionsStore sessions_store.Store) {
+func AddAuthRoutes(router *gin.RouterGroup, authService auth.AuthService, sessionsStore sessions_store.Store) {
 	authController := newAuth(authService, sessionsStore)
 
 	authRouter := router.Group("/auth")
@@ -30,7 +31,7 @@ func AddAuthRoutes(router *gin.RouterGroup, authService services.AuthService, se
 	authRouter.POST("/recover-password", middlewares.Unauthorized, authController.RequestPasswordReset)
 	authRouter.POST("/change-password", middlewares.Unauthorized, authController.ResetPassword)
 
-	onlyAdmin := middlewares.Roles([]models.RoleName{models.RoleAdmin})
+	onlyAdmin := middlewares.Roles([]user.RoleName{user.RoleAdmin})
 
 	authRouter.POST("/block-user/:userId", onlyAdmin, authController.BlockUser)
 	authRouter.POST("/unblock-user/:userId", onlyAdmin, authController.UnblockUser)
@@ -57,12 +58,12 @@ type AuthController interface {
 }
 
 type authController struct {
-	authService   services.AuthService
+	authService   auth.AuthService
 	sessionsStore sessions_store.Store
 }
 
 func newAuth(
-	authService services.AuthService,
+	authService auth.AuthService,
 	sessionsStore sessions_store.Store,
 ) AuthController {
 	return &authController{
@@ -76,10 +77,10 @@ func newAuth(
 // @Accept json
 // @Produce json
 // @Param body body auth.RegisterDTO true "RegisterDTO"
-// @Success 201 {object} user.UserResponseDTO
+// @Success 201 {object} user.UserDTO
 // @Router /auth/registration [post]
 func (c *authController) Register(ctx *gin.Context) {
-	registerDTO, err := rest_utils.DecodeJSON[auth.RegisterDTO](ctx)
+	registerDTO, err := rest_utils.DecodeJSON[auth_dto.RegisterDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -105,10 +106,10 @@ func (c *authController) Register(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param body body auth.LoginDTO true "LoginDTO"
-// @Success 200 {object} user.UserResponseDTO
+// @Success 200 {object} user.UserDTO
 // @Router /auth/login [post]
 func (c *authController) Login(ctx *gin.Context) {
-	loginDTO, err := rest_utils.DecodeJSON[auth.LoginDTO](ctx)
+	loginDTO, err := rest_utils.DecodeJSON[auth_dto.LoginDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -117,7 +118,7 @@ func (c *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	userResponseDTO, err := c.authService.Login(ctx.Request.Context(), &loginDTO)
+	user, err := c.authService.Login(ctx.Request.Context(), &loginDTO)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusUnauthorized,
@@ -125,6 +126,8 @@ func (c *authController) Login(ctx *gin.Context) {
 		)
 		return
 	}
+
+	userResponseDTO := user_dto.FromUser(user);
 
 	session := sessions_store.Default(ctx)
 	session.Set("user", userResponseDTO)
@@ -169,7 +172,7 @@ func (c *authController) Logout(ctx *gin.Context) {
 // @Summary Get current user
 // @Security CookieAuth
 // @Produce json
-// @Success 200 {object} user.UserResponseDTO
+// @Success 200 {object} user.UserDTO
 // @Router /auth/me [get]
 func (c *authController) Me(ctx *gin.Context) {
 	userResponseDTO, err := auth_utils.ExtractUser(ctx)
@@ -193,7 +196,7 @@ func (c *authController) Me(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/auth-change-password [post]
 func (c *authController) ChangePassword(ctx *gin.Context) {
-	changePasswordDTO, err := rest_utils.DecodeJSON[auth.ChangePasswordDTO](ctx)
+	changePasswordDTO, err := rest_utils.DecodeJSON[auth_dto.ChangePasswordDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -235,7 +238,7 @@ func (c *authController) ChangePassword(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/recover-password [post]
 func (c *authController) RequestPasswordReset(ctx *gin.Context) {
-	requestPasswordResetDTO, err := rest_utils.DecodeJSON[auth.RequestPasswordResetDTO](ctx)
+	requestPasswordResetDTO, err := rest_utils.DecodeJSON[auth_dto.RequestPasswordResetDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -269,7 +272,7 @@ func (c *authController) RequestPasswordReset(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/reset-password [post]
 func (c *authController) ResetPassword(ctx *gin.Context) {
-	resetPasswordDTO, err := rest_utils.DecodeJSON[auth.ResetPasswordDTO](ctx)
+	resetPasswordDTO, err := rest_utils.DecodeJSON[auth_dto.ResetPasswordDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -304,7 +307,7 @@ func (c *authController) ResetPassword(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/block-user/{userId} [post]
 func (c *authController) BlockUser(ctx *gin.Context) {
-	dto, err := rest_utils.DecodeURI[auth.BlockUserDTO](ctx)
+	dto, err := rest_utils.DecodeURI[auth_dto.BlockUserDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,
@@ -381,7 +384,7 @@ func (c *authController) BlockUser(ctx *gin.Context) {
 // @Success 200
 // @Router /auth/unblock-user/{userId} [post]
 func (c *authController) UnblockUser(ctx *gin.Context) {
-	dto, err := rest_utils.DecodeURI[auth.BlockUserDTO](ctx)
+	dto, err := rest_utils.DecodeURI[auth_dto.BlockUserDTO](ctx)
 	if err != nil {
 		http_error_utils.HTTPError(
 			ctx, http.StatusBadRequest,

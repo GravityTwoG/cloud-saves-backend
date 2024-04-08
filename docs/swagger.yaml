@@ -59,7 +59,7 @@ definitions:
     - password
     - token
     type: object
-  models.RoleName:
+  user.RoleName:
     enum:
     - ROLE_USER
     - ROLE_ADMIN
@@ -67,7 +67,7 @@ definitions:
     x-enum-varnames:
     - RoleUser
     - RoleAdmin
-  user.UserResponseDTO:
+  user.UserDTO:
     properties:
       email:
         type: string
@@ -76,7 +76,7 @@ definitions:
       isBlocked:
         type: boolean
       role:
-        $ref: '#/definitions/models.RoleName'
+        $ref: '#/definitions/user.RoleName'
       username:
         type: string
     type: object
@@ -84,7 +84,7 @@ definitions:
     properties:
       items:
         items:
-          $ref: '#/definitions/user.UserResponseDTO'
+          $ref: '#/definitions/user.UserDTO'
         type: array
       totalCount:
         type: integer
@@ -156,7 +156,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.UserResponseDTO'
+            $ref: '#/definitions/user.UserDTO'
       summary: Login
       tags:
       - Auth
@@ -180,7 +180,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.UserResponseDTO'
+            $ref: '#/definitions/user.UserDTO'
       security:
       - CookieAuth: []
       summary: Get current user
@@ -222,7 +222,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/user.UserResponseDTO'
+            $ref: '#/definitions/user.UserDTO'
       summary: Register new user
       tags:
       - Auth

@@ -1,35 +1,19 @@
-package services
+package auth
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
-	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/services"
 	"context"
 	"fmt"
 
 	"github.com/avito-tech/go-transaction-manager/trm/v2"
 )
 
-type RoleRepository interface {
-	GetByName(ctx context.Context, name models.RoleName) (*models.Role, error)
-}
-
-type PasswordRecoveryTokenRepository interface {
-	Create(ctx context.Context, token *models.PasswordRecoveryToken) error
-
-	Save(ctx context.Context, token *models.PasswordRecoveryToken) error
-
-	GetByToken(ctx context.Context, token string) (*models.PasswordRecoveryToken, error)
-
-	GetByUserId(ctx context.Context, userId uint) (*models.PasswordRecoveryToken, error)
-
-	Delete(ctx context.Context, token *models.PasswordRecoveryToken) error
-}
-
 type AuthService interface {
-	Register(ctx context.Context, dto *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error)
+	Register(ctx context.Context, dto *auth.RegisterDTO) (*user.User, error)
 
-	Login(ctx context.Context, dto *auth.LoginDTO) (*userDTOs.UserResponseDTO, error)
+	Login(ctx context.Context, dto *auth.LoginDTO) (*user.User, error)
 
 	ChangePassword(ctx context.Context, userId uint, dto *auth.ChangePasswordDTO) error
 
@@ -46,18 +30,18 @@ type authService struct {
 	trManager trm.Manager
 
 	roleRepo     RoleRepository
-	userRepo     UserRepository
+	userRepo     user.UserRepository
 	recoveryRepo PasswordRecoveryTokenRepository
 
-	emailService EmailService
+	emailService services.EmailService
 }
 
 func NewAuth(
 	trManager trm.Manager,
 	roleRepo RoleRepository,
-	userRepo UserRepository,
+	userRepo user.UserRepository,
 	recoveryRepo PasswordRecoveryTokenRepository,
-	emailService EmailService,
+	emailService services.EmailService,
 ) AuthService {
 	return &authService{
 		trManager:    trManager,
@@ -68,13 +52,13 @@ func NewAuth(
 	}
 }
 
-func (s *authService) Register(ctx context.Context, registerDTO *auth.RegisterDTO) (*userDTOs.UserResponseDTO, error) {
-	roleUser, err := s.roleRepo.GetByName(ctx, models.RoleUser)
+func (s *authService) Register(ctx context.Context, registerDTO *auth.RegisterDTO) (*user.User, error) {
+	roleUser, err := s.roleRepo.GetByName(ctx, user.RoleUser)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := models.NewUser(
+	user, err := user.NewUser(
 		registerDTO.Username,
 		registerDTO.Email,
 		registerDTO.Password,
@@ -89,13 +73,13 @@ func (s *authService) Register(ctx context.Context, registerDTO *auth.RegisterDT
 		return nil, err
 	}
 
-	return userDTOs.FromUser(user), nil
+	return user, nil
 }
 
 func (s *authService) Login(
 	ctx context.Context,
 	loginDTO *auth.LoginDTO,
-) (*userDTOs.UserResponseDTO, error) {
+) (*user.User, error) {
 	user, err := s.userRepo.GetByUsername(ctx, loginDTO.Username)
 	if err != nil {
 		return nil, err
@@ -104,11 +88,11 @@ func (s *authService) Login(
 	if !user.ComparePassword(loginDTO.Password) {
 		return nil, fmt.Errorf("INCORRECT_USERNAME_OR_PASSWORD")
 	}
-	if user.IsBlocked {
+	if user.IsBlocked() {
 		return nil, fmt.Errorf("USER_IS_BLOCKED")
 	}
 
-	return userDTOs.FromUser(user), nil
+	return user, nil
 }
 
 func (s *authService) ChangePassword(
@@ -144,10 +128,10 @@ func (s *authService) RequestPasswordReset(
 		}
 
 		// Get existing password recovery token
-		recoveryToken, err := s.recoveryRepo.GetByUserId(ctx, user.ID)
+		recoveryToken, err := s.recoveryRepo.GetByUserId(ctx, user.GetId())
 		// If not found, create new one
 		if err != nil {
-			recoveryToken = models.NewPasswordRecoveryToken(user)
+			recoveryToken = NewPasswordRecoveryToken(user)
 			err = s.recoveryRepo.Create(ctx, recoveryToken)
 			if err != nil {
 				return err
@@ -157,7 +141,7 @@ func (s *authService) RequestPasswordReset(
 		return s.emailService.SendPasswordResetEmail(
 			ctx,
 			user,
-			recoveryToken.Token,
+			recoveryToken.GetToken(),
 		)
 	})
 }
@@ -172,13 +156,13 @@ func (s *authService) ResetPassword(
 			return err
 		}
 
-		user := passwordRecoveryToken.User
+		user := passwordRecoveryToken.GetUser()
 		err = user.SetPassword(resetPasswordDTO.Password)
 		if err != nil {
 			return err
 		}
 
-		err = s.userRepo.Save(ctx, &user)
+		err = s.userRepo.Save(ctx, user)
 		if err != nil {
 			return err
 		}
@@ -193,7 +177,7 @@ func (s *authService) BlockUser(ctx context.Context, userId uint) error {
 		return err
 	}
 
-	user.IsBlocked = true
+	user.Block()
 
 	return s.userRepo.Save(ctx, user)
 }
@@ -204,7 +188,7 @@ func (s *authService) UnblockUser(ctx context.Context, userId uint) error {
 		return err
 	}
 
-	user.IsBlocked = false
+	user.Unblock()
 
 	return s.userRepo.Save(ctx, user)
 }

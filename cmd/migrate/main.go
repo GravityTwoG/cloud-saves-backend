@@ -1,8 +1,9 @@
 package main
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/models"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/initializers"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/models"
 	"errors"
 	"log"
 	"os"
@@ -10,27 +11,23 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
-
-func init() {
+func main() {
 	err := initializers.LoadEnvVariables()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	db, err = initializers.ConnectToDB(os.Getenv("DSN"))
+	db, err := initializers.ConnectToDB(os.Getenv("DSN"))
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func main() {
-	err := db.AutoMigrate(&models.Role{})
+	
+	err = db.AutoMigrate(&models.RoleModel{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(&models.User{})
+	err = db.AutoMigrate(&models.UserModel{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,8 +37,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	roleUser := models.Role{Name: models.RoleUser}
-	roleAdmin := models.Role{Name: models.RoleAdmin}
+	roleUser := models.RoleModel{Name: user.RoleUser}
+	roleAdmin := models.RoleModel{Name: user.RoleAdmin}
 
 	err = db.Create(&roleUser).Error
 	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -52,11 +49,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	user, err := models.NewUser(
+	user, err := user.NewUser(
 		"admin",
 		"admin@example.com",
 		"12121212",
-		&roleAdmin,
+		user.RoleFromDB(roleAdmin.ID, roleAdmin.Name),
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -37,9 +37,9 @@ type ErrInvalidInput struct {
 	ErrDomain
 }
 
-func NewErrInvalidInput(err error) *ErrInvalidInput {
+func NewErrInvalidInput(err string) *ErrInvalidInput {
 	return &ErrInvalidInput{ErrDomain{
-		Err:  err,
+		Err:  fmt.Errorf("invalid input: %s", err),
 		Code: "INVALID_INPUT",
 	}}
 }

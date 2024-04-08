@@ -4,13 +4,15 @@ import (
 	"cloud-saves-backend/docs"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/config"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/controllers"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
-	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/email-sender"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/auth"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
+	user_dto "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
+	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/infra/email-sender"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/repositories"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/services"
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/infra/sessions"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/initializers"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/repositories"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/services"
-	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/sessions"
 	"encoding/gob"
 	"log"
 	"net/http"
@@ -28,23 +30,8 @@ import (
 	"github.com/avito-tech/go-transaction-manager/trm/v2/settings"
 )
 
-var db *gorm.DB
-
-func init() {
-
-	err := initializers.LoadEnvVariables()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db, err = initializers.ConnectToDB(os.Getenv("DSN"))
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
-	gob.Register(&user.UserResponseDTO{})
+	gob.Register(&user_dto.UserDTO{})
 
 	app := gin.New()
 
@@ -81,14 +68,14 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 	roleRepo := repositories.NewRoleRepository(database, trmgorm.DefaultCtxGetter)
 	recoveryTokenRepo := repositories.NewPasswordRecoveryTokenRepository(database, trmgorm.DefaultCtxGetter)
 
-	authService := services.NewAuth(
+	authService := auth.NewAuth(
 		trManager,
 		roleRepo,
 		userRepo,
 		recoveryTokenRepo,
 		emailService,
 	)
-	userService := services.NewUser(userRepo)
+	userService := user.NewUserService(userRepo)
 
 	apiRouter := app.Group(conf.APIPrefix)
 
@@ -120,6 +107,16 @@ func recoveryHandler(c *gin.Context, err interface{}) {
 // @in cookie
 // @name session
 func main() {
+	err := initializers.LoadEnvVariables()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db, err := initializers.ConnectToDB(os.Getenv("DSN"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	
 	conf := config.LoadConfig()
 	app := createApp(db, conf)
 

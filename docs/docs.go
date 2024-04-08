@@ -113,7 +113,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponseDTO"
+                            "$ref": "#/definitions/user.UserDTO"
                         }
                     }
                 }
@@ -158,7 +158,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponseDTO"
+                            "$ref": "#/definitions/user.UserDTO"
                         }
                     }
                 }
@@ -221,7 +221,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponseDTO"
+                            "$ref": "#/definitions/user.UserDTO"
                         }
                     }
                 }
@@ -449,7 +449,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.RoleName": {
+        "user.RoleName": {
             "type": "string",
             "enum": [
                 "ROLE_USER",
@@ -460,7 +460,7 @@ const docTemplate = `{
                 "RoleAdmin"
             ]
         },
-        "user.UserResponseDTO": {
+        "user.UserDTO": {
             "type": "object",
             "properties": {
                 "email": {
@@ -473,7 +473,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "role": {
-                    "$ref": "#/definitions/models.RoleName"
+                    "$ref": "#/definitions/user.RoleName"
                 },
                 "username": {
                     "type": "string"
@@ -486,7 +486,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/user.UserResponseDTO"
+                        "$ref": "#/definitions/user.UserDTO"
                     }
                 },
                 "totalCount": {

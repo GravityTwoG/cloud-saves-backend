@@ -107,7 +107,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponseDTO"
+                            "$ref": "#/definitions/user.UserDTO"
                         }
                     }
                 }
@@ -152,7 +152,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponseDTO"
+                            "$ref": "#/definitions/user.UserDTO"
                         }
                     }
                 }
@@ -215,7 +215,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/user.UserResponseDTO"
+                            "$ref": "#/definitions/user.UserDTO"
                         }
                     }
                 }
@@ -443,7 +443,7 @@
                 }
             }
         },
-        "models.RoleName": {
+        "user.RoleName": {
             "type": "string",
             "enum": [
                 "ROLE_USER",
@@ -454,7 +454,7 @@
                 "RoleAdmin"
             ]
         },
-        "user.UserResponseDTO": {
+        "user.UserDTO": {
             "type": "object",
             "properties": {
                 "email": {
@@ -467,7 +467,7 @@
                     "type": "boolean"
                 },
                 "role": {
-                    "$ref": "#/definitions/models.RoleName"
+                    "$ref": "#/definitions/user.RoleName"
                 },
                 "username": {
                     "type": "string"
@@ -480,7 +480,7 @@
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/user.UserResponseDTO"
+                        "$ref": "#/definitions/user.UserDTO"
                     }
                 },
                 "totalCount": {
