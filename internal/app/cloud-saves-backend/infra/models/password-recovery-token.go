@@ -11,7 +11,7 @@ type PasswordRecoveryToken struct {
 	UpdatedAt time.Time
 	Token     string `gorm:"unique;not null"`
 	UserID    uint   `gorm:"unique;not null"`
-	User      UserModel   `gorm:"onDelete:CASCADE"`
+	User      User   `gorm:"onDelete:CASCADE"`
 }
 
 func PasswordRecoveryTokenFromEntity(token *auth.PasswordRecoveryToken) *PasswordRecoveryToken {

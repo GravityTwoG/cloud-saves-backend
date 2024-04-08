@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type UserModel struct {
+type User struct {
 	ID        uint `gorm:"primarykey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -14,11 +14,11 @@ type UserModel struct {
 	Password  string `gorm:"not null"`
 	IsBlocked bool   `gorm:"not null"`
 	RoleID    uint   `gorm:"not null"`
-	Role      RoleModel   `gorm:"onDelete:RESTRICT"`
+	Role      Role   `gorm:"onDelete:RESTRICT"`
 }
 
-func UserFromEntity(user *user.User) *UserModel {
-	return &UserModel{
+func UserFromEntity(user *user.User) *User {
+	return &User{
 		ID:        user.GetId(),
 		Username:  user.GetUsername(),
 		Email:     user.GetEmail(),
@@ -29,13 +29,13 @@ func UserFromEntity(user *user.User) *UserModel {
 	}
 }
 
-func UserFromModel(userModel *UserModel) *user.User {
+func UserFromModel(userModel *User) *user.User {
 	return user.UserFromDB(
-		userModel.ID, 
-		userModel.Username, 
-		userModel.Email, 
-		userModel.Password, 
-		RoleFromModel(&userModel.Role), 
+		userModel.ID,
+		userModel.Username,
+		userModel.Email,
+		userModel.Password,
+		RoleFromModel(&userModel.Role),
 		userModel.IsBlocked,
 	)
 }

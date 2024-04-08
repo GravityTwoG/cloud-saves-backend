@@ -41,8 +41,8 @@ func (r *userRepo) Save(ctx context.Context, user *user.User) error {
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*user.User, error) {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
-	userModel := models.UserModel{}
-	err := db.Where(&models.UserModel{Email: email}).First(&userModel).Error
+	userModel := models.User{}
+	err := db.Where(&models.User{Email: email}).First(&userModel).Error
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +53,9 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (*user.User, er
 func (r *userRepo) GetByUsername(ctx context.Context, username string) (*user.User, error) {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
-	userModel := models.UserModel{}
+	userModel := models.User{}
 	err := db.Preload("Role").Where(
-		&models.UserModel{Username: username},
+		&models.User{Username: username},
 	).First(&userModel).Error
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*user.Us
 func (r *userRepo) GetById(ctx context.Context, userId uint) (*user.User, error) {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
-	userModel := models.UserModel{}
+	userModel := models.User{}
 	err := db.Preload("Role").First(&userModel, userId).Error
 	if err != nil {
 		return nil, err
@@ -85,11 +85,11 @@ func whereUsernameLike(searchQuery string) func(db *gorm.DB) *gorm.DB {
 func (r *userRepo) GetAll(ctx context.Context, dto common.GetResourceDTO) (*common.ResourceDTO[user.User], error) {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
-	userModels := []models.UserModel{}
+	userModels := []models.User{}
 	var totalCount int64
 
 	err := db.
-		Model(&models.UserModel{}).
+		Model(&models.User{}).
 		Scopes(whereUsernameLike(dto.SearchQuery)).
 		Count(&totalCount).
 		Order("username asc").

@@ -116,7 +116,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	conf := config.LoadConfig()
 	app := createApp(db, conf)
 

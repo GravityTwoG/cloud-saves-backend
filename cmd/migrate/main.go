@@ -21,13 +21,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	err = db.AutoMigrate(&models.RoleModel{})
+
+	err = db.AutoMigrate(&models.Role{})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.AutoMigrate(&models.UserModel{})
+	err = db.AutoMigrate(&models.User{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,8 +37,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	roleUser := models.RoleModel{Name: user.RoleUser}
-	roleAdmin := models.RoleModel{Name: user.RoleAdmin}
+	roleUser := models.Role{Name: user.RoleUser}
+	roleAdmin := models.Role{Name: user.RoleAdmin}
 
 	err = db.Create(&roleUser).Error
 	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -55,11 +55,12 @@ func main() {
 		"12121212",
 		user.RoleFromDB(roleAdmin.ID, roleAdmin.Name),
 	)
+	userModel := models.UserFromEntity(user)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.Create(&user).Error
+	err = db.Create(&userModel).Error
 	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
 		log.Fatal(err)
 	}

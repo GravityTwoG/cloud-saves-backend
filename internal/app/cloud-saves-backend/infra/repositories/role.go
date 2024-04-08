@@ -26,8 +26,8 @@ func NewRoleRepository(db *gorm.DB, getter *trmgorm.CtxGetter) auth.RoleReposito
 func (r *roleRepo) GetByName(ctx context.Context, name user.RoleName) (*user.Role, error) {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
-	roleModel := models.RoleModel{}
-	err := db.Where(&models.RoleModel{Name: name}).First(&roleModel).Error
+	roleModel := models.Role{}
+	err := db.Where(&models.Role{Name: name}).First(&roleModel).Error
 	if err != nil {
 		return nil, err
 	}
