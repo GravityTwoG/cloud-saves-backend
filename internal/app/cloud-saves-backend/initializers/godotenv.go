@@ -4,7 +4,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func LoadEnvVariables() (err error) {
-	err = godotenv.Load()
+func LoadEnvVariables(filename string) (err error) {
+	err = godotenv.Load(filename)
 	return err
 }

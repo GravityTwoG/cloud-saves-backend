@@ -28,14 +28,24 @@ func (r *userRepo) Create(ctx context.Context, user *user.User) error {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
 	userModel := models.UserFromEntity(user)
-	return db.Preload("Role").Create(&userModel).Error
+	err := db.Preload("Role").Create(&userModel).Error
+	if err != nil {
+		return err
+	}
+  *user =	*models.UserFromModel(userModel)
+	return nil
 }
 
 func (r *userRepo) Save(ctx context.Context, user *user.User) error {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
 	userModel := models.UserFromEntity(user)
-	return db.Preload("Role").Save(userModel).Error
+	err := db.Preload("Role").Save(userModel).Error
+	if err != nil {
+		return err
+	}
+	*user =	*models.UserFromModel(userModel)
+	return nil
 }
 
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*user.User, error) {

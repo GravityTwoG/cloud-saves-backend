@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	err := initializers.LoadEnvVariables()
+	err := initializers.LoadEnvVariables(".env")
 	if err != nil {
 		log.Fatal(err)
 	}

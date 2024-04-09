@@ -107,7 +107,7 @@ func recoveryHandler(c *gin.Context, err interface{}) {
 // @in cookie
 // @name session
 func main() {
-	err := initializers.LoadEnvVariables()
+	err := initializers.LoadEnvVariables(".env")
 	if err != nil {
 		log.Fatal(err)
 	}

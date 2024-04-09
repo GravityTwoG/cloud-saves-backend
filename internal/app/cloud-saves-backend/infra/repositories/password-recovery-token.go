@@ -27,14 +27,24 @@ func (r *recoveryRepo) Create(ctx context.Context, token *auth.PasswordRecoveryT
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
 	tokenModel := models.PasswordRecoveryTokenFromEntity(token)
-	return db.Preload("User").Create(tokenModel).Error
+	err := db.Preload("User").Create(tokenModel).Error
+	if err != nil {
+		return err	
+	}
+	*token = *models.PasswordRecoveryTokenFromModel(tokenModel)
+	return nil
 }
 
 func (r *recoveryRepo) Save(ctx context.Context, token *auth.PasswordRecoveryToken) error {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
 	tokenModel := models.PasswordRecoveryTokenFromEntity(token)
-	return db.Preload("User").Save(tokenModel).Error
+	err := db.Preload("User").Save(tokenModel).Error
+	if err != nil {
+		return err
+	}
+	*token = *models.PasswordRecoveryTokenFromModel(tokenModel)
+	return nil
 }
 
 func (r *recoveryRepo) GetByToken(ctx context.Context, token string) (*auth.PasswordRecoveryToken, error) {
@@ -67,6 +77,7 @@ func (r *recoveryRepo) GetByUserId(ctx context.Context, userId uint) (*auth.Pass
 
 	tokenModel := models.PasswordRecoveryToken{}
 	err := db.
+		Preload("User").
 		Where(&models.PasswordRecoveryToken{UserID: userId}).
 		First(&tokenModel).Error
 	if err != nil {

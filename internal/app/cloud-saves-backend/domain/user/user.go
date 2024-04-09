@@ -71,6 +71,10 @@ func (u *User) GetId() uint {
 	return u.id
 }
 
+func (u *User) SetId(id uint) {
+	u.id = id
+}
+
 func (u *User) GetCreatedAt() time.Time {
 	return u.createdAt
 }
