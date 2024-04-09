@@ -1,5 +1,25 @@
 version: "3"
 services:
+  cloud-saves-backend:
+    build:
+      context: ../deployments/app-local
+    volumes:
+      - ../internal:/internal
+      - ../cmd:/cmd
+      - ../docs:/docs
+      - ../.go/pkg:/go/pkg
+      - ../.go-cache:/go-cache
+      - ../go.mod:/go.mod
+      - ../go.sum:/go.sum
+      - ../.env.test.docker:/.env
+    working_dir: /
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+
   postgres:
     container_name: postgres-cloud-saves-db-test
     image: postgres:15

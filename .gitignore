@@ -19,7 +19,12 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+.go/
+.go-cache/
 
 .env
+.env.docker
+.env.test
+.env.test.docker
 
 deployments/docker-volumes

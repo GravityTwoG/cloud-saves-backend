@@ -86,6 +86,7 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 	docs.SwaggerInfo.BasePath = conf.APIPrefix
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+
 	return app
 }
 
@@ -123,6 +124,7 @@ func main() {
 	if app == nil {
 		return
 	}
+
 
 	app.Run()
 }
