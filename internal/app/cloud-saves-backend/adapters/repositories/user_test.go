@@ -1,8 +1,8 @@
 package repositories_test
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/adapters/repositories"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/repositories"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/tests"
 	"context"
 	"fmt"

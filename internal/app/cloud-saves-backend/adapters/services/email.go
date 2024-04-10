@@ -1,8 +1,8 @@
 package services
 
 import (
+	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/adapters/email-sender"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	email_sender "cloud-saves-backend/internal/app/cloud-saves-backend/infra/email-sender"
 	"context"
 	"fmt"
 )

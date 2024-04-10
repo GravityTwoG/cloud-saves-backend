@@ -1,10 +1,10 @@
 package controllers
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/common"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/common"
-	user_dto "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
+	user_dto "cloud-saves-backend/internal/app/cloud-saves-backend/ports/dto/user"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/ports/middlewares"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
 	rest_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/rest-utils"
 	"net/http"

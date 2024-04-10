@@ -1,8 +1,8 @@
 package main
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/adapters/models"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/models"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/initializers"
 	"errors"
 	"log"

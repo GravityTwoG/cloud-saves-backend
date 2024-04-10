@@ -1,12 +1,12 @@
 package controllers
 
 import (
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/adapters/sessions"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/auth"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	auth_dto "cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
-	user_dto "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
-	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/infra/sessions"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/middlewares"
+	auth_dto "cloud-saves-backend/internal/app/cloud-saves-backend/ports/dto/auth"
+	user_dto "cloud-saves-backend/internal/app/cloud-saves-backend/ports/dto/user"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/ports/middlewares"
 	auth_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/auth"
 	http_error_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/http-error-utils"
 	rest_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/rest-utils"

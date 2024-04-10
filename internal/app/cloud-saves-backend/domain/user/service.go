@@ -1,7 +1,7 @@
 package user
 
 import (
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/common"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/common"
 	"context"
 )
 

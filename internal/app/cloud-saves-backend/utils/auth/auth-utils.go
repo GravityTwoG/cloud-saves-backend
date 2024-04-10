@@ -1,8 +1,8 @@
 package auth
 
 import (
-	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/dto/user"
-	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/infra/sessions"
+	sessions_store "cloud-saves-backend/internal/app/cloud-saves-backend/adapters/sessions"
+	userDTOs "cloud-saves-backend/internal/app/cloud-saves-backend/ports/dto/user"
 	"fmt"
 
 	"github.com/gin-gonic/gin"

@@ -1,9 +1,9 @@
 package repositories
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/adapters/models"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/common"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/common"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/models"
 	gorm_utils "cloud-saves-backend/internal/app/cloud-saves-backend/utils/gorm"
 	"context"
 

@@ -1,8 +1,8 @@
 package user
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/common"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/common"
 )
 
 type UsersResponseDTO struct {

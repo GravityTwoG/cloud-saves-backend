@@ -1,9 +1,9 @@
 package repositories
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/adapters/models"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/auth"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/models"
 	"context"
 
 	trmgorm "github.com/avito-tech/go-transaction-manager/drivers/gorm/v2"

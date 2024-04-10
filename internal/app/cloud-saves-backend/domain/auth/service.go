@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"cloud-saves-backend/internal/app/cloud-saves-backend/adapters/services"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/dto/auth"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/infra/services"
+	"cloud-saves-backend/internal/app/cloud-saves-backend/ports/dto/auth"
 	"context"
 	"fmt"
 
