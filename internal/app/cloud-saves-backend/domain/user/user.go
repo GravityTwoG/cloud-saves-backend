@@ -8,14 +8,14 @@ import (
 )
 
 type User struct {
-	id        uint 
-	
-	username  string 
-	email     string 
-	password  string 
-	isBlocked bool   
-	role      Role   
-	
+	id uint
+
+	username  string
+	email     string
+	password  string
+	isBlocked bool
+	role      Role
+
 	createdAt time.Time
 	updatedAt time.Time
 }
@@ -31,17 +31,21 @@ func NewUser(
 		isBlocked: false,
 	}
 
-	err := user.SetEmail(email)
-	if err != nil {
-		return nil, err
+	if len(email) < 3 || len(email) > 256 {
+		return nil, domain_errors.NewErrInvalidInput(
+			"email length must be between 3 and 256 characters",
+		)
 	}
+	user.email = email
 
-	err = user.SetUsername(username)
-	if err != nil {
-		return nil, err
+	if len(username) < 3 || len(username) > 32 {
+		return nil, domain_errors.NewErrInvalidInput(
+			"username length must be between 3 and 32 characters",
+		)
 	}
+	user.username = username
 
-	err = user.SetPassword(password)
+	err := user.ChangePassword(password)
 	if err != nil {
 		return nil, err
 	}
@@ -50,10 +54,10 @@ func NewUser(
 }
 
 func UserFromDB(
-	id uint, 
-	username, 
-	email, 
-	password string, 
+	id uint,
+	username,
+	email,
+	password string,
 	role *Role,
 	isBlocked bool,
 ) *User {
@@ -87,28 +91,12 @@ func (u *User) GetEmail() string {
 	return u.email
 }
 
-func (u *User) SetEmail(email string) error {
-	if len(email) < 3 || len(email) > 256 {
-		return domain_errors.NewErrInvalidInput(
-			"email length must be between 3 and 256 characters",
-		)
-	}
-	u.email = email
-	return nil
-}
-
 func (u *User) GetUsername() string {
 	return u.username
 }
 
-func (u *User) SetUsername(username string) error {
-	if len(username) < 3 || len(username) > 32 {
-		return domain_errors.NewErrInvalidInput(
-			"username length must be between 3 and 32 characters",
-		)
-	}
-	u.username = username
-	return nil
+func (u *User) GetPassword() string {
+	return u.password
 }
 
 func (u *User) GetRole() *Role {
@@ -127,11 +115,7 @@ func (u *User) Unblock() {
 	u.isBlocked = false
 }
 
-func (u *User) GetPassword() string {
-	return u.password
-}
-
-func (u *User) SetPassword(rawPassword string) error {
+func (u *User) ChangePassword(rawPassword string) error {
 	if len(rawPassword) < 8 || len(rawPassword) > 64 {
 		return domain_errors.NewErrInvalidInput(
 			"password length must be between 8 and 64 characters",

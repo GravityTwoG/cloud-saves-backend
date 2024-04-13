@@ -109,7 +109,7 @@ func (s *authService) ChangePassword(
 		return fmt.Errorf("INCORRECT_USERNAME_OR_PASSWORD")
 	}
 
-	err = user.SetPassword(changePasswordDTO.NewPassword)
+	err = user.ChangePassword(changePasswordDTO.NewPassword)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (s *authService) ResetPassword(
 		}
 
 		user := passwordRecoveryToken.GetUser()
-		err = user.SetPassword(resetPasswordDTO.Password)
+		err = user.ChangePassword(resetPasswordDTO.Password)
 		if err != nil {
 			return err
 		}
