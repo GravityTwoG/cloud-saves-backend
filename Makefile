@@ -14,11 +14,16 @@ app-run:
 migrate:
 	go run ./cmd/migrate/main.go
 
+test:
+	go test ./...
+
 infra:
 	cd deployments && docker-compose up
 
 infra-detached:
 	cd deployments && docker-compose up -d
 
+openapi:
+	swag init -g ./cmd/cloud-saves-backend/main.go
 
 dev: infra-detached migrate infra
