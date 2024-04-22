@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRoleRepository (t *testing.T) {	
+func TestRoleRepository(t *testing.T) {
 	db := tests.SetupSuite()
 
 	roleRepo := repositories.NewRoleRepository(db, trmgorm.DefaultCtxGetter)
@@ -32,4 +32,3 @@ func TestRoleRepository (t *testing.T) {
 		})
 	}
 }
-

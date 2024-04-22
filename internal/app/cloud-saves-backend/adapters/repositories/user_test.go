@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUserRepository(t *testing.T) {	
+func TestUserRepository(t *testing.T) {
 	db := tests.SetupSuite()
 
 	userRepo := repositories.NewUserRepository(db, trmgorm.DefaultCtxGetter)
@@ -39,23 +39,23 @@ func TestUserRepository(t *testing.T) {
 	t.Run("No duplicate usernames", func(t *testing.T) {
 		t.Parallel()
 		user1, err := user.NewUser(
-			"username_duplicate", "username_duplicate1@mail.ru", 
+			"username_duplicate", "username_duplicate1@mail.ru",
 			"password", roleUser,
 		)
 		require.NoError(t, err)
 		user2, err := user.NewUser(
-			"username_duplicate", "username_duplicate2@mail.ru", 
+			"username_duplicate", "username_duplicate2@mail.ru",
 			"password", roleUser,
-		) 
+		)
 		require.NoError(t, err)
-	
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			err := userRepo.Create(ctx, user1)
 			require.NoError(t, err)
 
 			err = userRepo.Create(ctx, user2)
 			require.Error(t, err)
-			
+
 			return fmt.Errorf("rollback")
 		})
 	})
@@ -63,23 +63,23 @@ func TestUserRepository(t *testing.T) {
 	t.Run("No duplicate emails", func(t *testing.T) {
 		t.Parallel()
 		user1, err := user.NewUser(
-			"email_duplicate1", "email_duplicate@mail.ru", 
+			"email_duplicate1", "email_duplicate@mail.ru",
 			"password", roleUser,
 		)
 		require.NoError(t, err)
 		user2, err := user.NewUser(
-			"email_duplicate2", "email_duplicate@mail.ru", 
+			"email_duplicate2", "email_duplicate@mail.ru",
 			"password", roleUser,
-		) 
+		)
 		require.NoError(t, err)
-	
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			err := userRepo.Create(ctx, user1)
 			require.NoError(t, err)
 
 			err = userRepo.Create(ctx, user2)
 			require.Error(t, err)
-			
+
 			return fmt.Errorf("rollback")
 		})
 	})
@@ -87,15 +87,15 @@ func TestUserRepository(t *testing.T) {
 	t.Run("GetUserById", func(t *testing.T) {
 		t.Parallel()
 		user, err := user.NewUser(
-			"username", "username1@mail.ru", 
+			"username", "username1@mail.ru",
 			"password", roleAdmin,
 		)
-		require.NoError(t, err) 
-	
+		require.NoError(t, err)
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			err := userRepo.Create(ctx, user)
 			require.NoError(t, err)
-			
+
 			userFromRepo, err := userRepo.GetById(ctx, user.GetId())
 			require.NoError(t, err)
 			require.Equal(t, user.GetId(), userFromRepo.GetId())
@@ -106,15 +106,15 @@ func TestUserRepository(t *testing.T) {
 	t.Run("GetByUsername", func(t *testing.T) {
 		t.Parallel()
 		user, err := user.NewUser(
-			"username", "username1@mail.ru", 
+			"username", "username1@mail.ru",
 			"password", roleAdmin,
 		)
-		require.NoError(t, err) 
-	
+		require.NoError(t, err)
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			err := userRepo.Create(ctx, user)
 			require.NoError(t, err)
-			
+
 			userFromRepo, err := userRepo.GetByUsername(ctx, user.GetUsername())
 			require.NoError(t, err)
 			require.Equal(t, user.GetId(), userFromRepo.GetId())
@@ -126,15 +126,15 @@ func TestUserRepository(t *testing.T) {
 	t.Run("GetByEmail", func(t *testing.T) {
 		t.Parallel()
 		user, err := user.NewUser(
-			"username_get_email", "username_email_get@mail.ru", 
+			"username_get_email", "username_email_get@mail.ru",
 			"password", roleAdmin,
 		)
-		require.NoError(t, err) 
-	
+		require.NoError(t, err)
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			err := userRepo.Create(ctx, user)
 			require.NoError(t, err)
-			
+
 			userFromRepo, err := userRepo.GetByEmail(ctx, user.GetEmail())
 			require.NoError(t, err)
 			require.Equal(t, user.GetId(), userFromRepo.GetId())
@@ -143,4 +143,3 @@ func TestUserRepository(t *testing.T) {
 		})
 	})
 }
-

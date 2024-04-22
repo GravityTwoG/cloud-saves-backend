@@ -32,7 +32,7 @@ func (r *userRepo) Create(ctx context.Context, user *user.User) error {
 	if err != nil {
 		return err
 	}
-  *user =	*models.UserFromModel(userModel)
+	*user = *models.UserFromModel(userModel)
 	return nil
 }
 
@@ -44,7 +44,7 @@ func (r *userRepo) Save(ctx context.Context, user *user.User) error {
 	if err != nil {
 		return err
 	}
-	*user =	*models.UserFromModel(userModel)
+	*user = *models.UserFromModel(userModel)
 	return nil
 }
 

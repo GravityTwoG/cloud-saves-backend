@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTokenRepository(t *testing.T) {	
+func TestTokenRepository(t *testing.T) {
 	db := tests.SetupSuite()
 
 	userRepo := repositories.NewUserRepository(db, trmgorm.DefaultCtxGetter)
@@ -30,7 +30,7 @@ func TestTokenRepository(t *testing.T) {
 		),
 	)
 
-	admin, err := userRepo.GetByUsername(ctx, "admin")  
+	admin, err := userRepo.GetByUsername(ctx, "admin")
 	require.NoError(t, err)
 
 	// trManager.Do(ctx, func(ctx context.Context) error {
@@ -47,16 +47,16 @@ func TestTokenRepository(t *testing.T) {
 			*auth.NewPasswordRecoveryToken(admin),
 			*auth.NewPasswordRecoveryToken(admin),
 		}
-	
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			token := tokens[0]
 			err := tokenRepo.Create(ctx, &token)
 			require.NoError(t, err)
-	
+
 			token = tokens[1]
 			err = tokenRepo.Create(ctx, &token)
 			require.Error(t, err)
-			
+
 			return fmt.Errorf("rollback")
 		})
 	})
@@ -65,12 +65,12 @@ func TestTokenRepository(t *testing.T) {
 		tokens := []auth.PasswordRecoveryToken{
 			*auth.NewPasswordRecoveryToken(admin),
 		}
-	
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			token := tokens[0]
 			err := tokenRepo.Create(ctx, &token)
 			require.NoError(t, err)
-			
+
 			tokenFromRepo, err := tokenRepo.GetByUserId(ctx, admin.GetId())
 			require.NoError(t, err)
 			require.Equal(t, admin.GetId(), tokenFromRepo.GetUser().GetId())
@@ -82,12 +82,12 @@ func TestTokenRepository(t *testing.T) {
 		tokens := []auth.PasswordRecoveryToken{
 			*auth.NewPasswordRecoveryToken(admin),
 		}
-	
+
 		trManager.Do(ctx, func(ctx context.Context) error {
 			token := tokens[0]
 			err := tokenRepo.Create(ctx, &token)
 			require.NoError(t, err)
-	
+
 			tokenFromRepo, err := tokenRepo.GetByUserId(ctx, admin.GetId())
 			require.NoError(t, err)
 			err = tokenRepo.Delete(ctx, tokenFromRepo)
@@ -100,4 +100,3 @@ func TestTokenRepository(t *testing.T) {
 		})
 	})
 }
-

@@ -127,7 +127,7 @@ func (c *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	userResponseDTO := user_dto.FromUser(user);
+	userResponseDTO := user_dto.FromUser(user)
 
 	session := sessions_store.Default(ctx)
 	session.Set("user", userResponseDTO)

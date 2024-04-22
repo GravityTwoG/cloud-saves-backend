@@ -8,10 +8,10 @@ import (
 )
 
 type PasswordRecoveryToken struct {
-	id        uint
-	token     string
-	user      user.User
-	
+	id    uint
+	token string
+	user  user.User
+
 	createdAt time.Time
 	updatedAt time.Time
 }
@@ -33,13 +33,13 @@ func PasswordRecoveryTokenFromDB(
 	token string,
 	user *user.User,
 	createdAt time.Time,
-	updatedAt time.Time,	
+	updatedAt time.Time,
 ) *PasswordRecoveryToken {
 	return &PasswordRecoveryToken{
-		id:        ID,
-		token:     token,
-		user:      *user,
-		
+		id:    ID,
+		token: token,
+		user:  *user,
+
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}
@@ -64,4 +64,3 @@ func (t *PasswordRecoveryToken) GetCreatedAt() time.Time {
 func (t *PasswordRecoveryToken) GetUpdatedAt() time.Time {
 	return t.updatedAt
 }
-

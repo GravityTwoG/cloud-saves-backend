@@ -7,7 +7,7 @@ import (
 
 type UsersResponseDTO struct {
 	Items      []UserDTO `json:"items"`
-	TotalCount int               `json:"totalCount"`
+	TotalCount int       `json:"totalCount"`
 }
 
 func FromUsers(users *common.ResourceDTO[user.User]) *UsersResponseDTO {

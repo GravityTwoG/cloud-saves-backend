@@ -29,7 +29,7 @@ func (r *recoveryRepo) Create(ctx context.Context, token *auth.PasswordRecoveryT
 	tokenModel := models.PasswordRecoveryTokenFromEntity(token)
 	err := db.Preload("User").Create(tokenModel).Error
 	if err != nil {
-		return err	
+		return err
 	}
 	*token = *models.PasswordRecoveryTokenFromModel(tokenModel)
 	return nil

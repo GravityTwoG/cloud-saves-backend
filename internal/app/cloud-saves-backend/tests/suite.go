@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupSuite() (*gorm.DB) {
+func SetupSuite() *gorm.DB {
 	err := initializers.LoadEnvVariables("../../../../../.env.test")
 	if err != nil {
 		log.Fatal(err)
