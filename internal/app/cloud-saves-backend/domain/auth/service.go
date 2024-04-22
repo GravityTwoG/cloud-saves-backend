@@ -29,7 +29,7 @@ type AuthService interface {
 type authService struct {
 	trManager trm.Manager
 
-	roleRepo     RoleRepository
+	roleRepo     user.RoleRepository
 	userRepo     user.UserRepository
 	recoveryRepo PasswordRecoveryTokenRepository
 
@@ -38,7 +38,7 @@ type authService struct {
 
 func NewAuth(
 	trManager trm.Manager,
-	roleRepo RoleRepository,
+	roleRepo user.RoleRepository,
 	userRepo user.UserRepository,
 	recoveryRepo PasswordRecoveryTokenRepository,
 	emailService services.EmailService,

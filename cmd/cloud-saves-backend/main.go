@@ -75,7 +75,7 @@ func createApp(database *gorm.DB, conf *config.Config) *gin.Engine {
 		recoveryTokenRepo,
 		emailService,
 	)
-	userService := user.NewUserService(userRepo)
+	userService := user.NewUserService(userRepo, roleRepo)
 
 	apiRouter := app.Group(conf.APIPrefix)
 

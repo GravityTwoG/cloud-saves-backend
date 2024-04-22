@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"cloud-saves-backend/internal/app/cloud-saves-backend/adapters/models"
-	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/auth"
 	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
 	"context"
 
@@ -16,7 +15,7 @@ type roleRepo struct {
 	getter *trmgorm.CtxGetter
 }
 
-func NewRoleRepository(db *gorm.DB, getter *trmgorm.CtxGetter) auth.RoleRepository {
+func NewRoleRepository(db *gorm.DB, getter *trmgorm.CtxGetter) user.RoleRepository {
 	return &roleRepo{
 		db:     db,
 		getter: getter,

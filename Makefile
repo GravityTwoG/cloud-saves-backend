@@ -23,6 +23,18 @@ infra:
 infra-detached:
 	cd deployments && docker-compose up -d
 
+infra-down:
+	cd deployments && docker-compose down
+
+infra-test:
+	cd deployments && docker-compose -f docker-compose.test.yaml up
+
+infra-test-detached:
+	cd deployments && docker-compose -f docker-compose.test.yaml up -d
+
+infra-test-down:
+	cd deployments && docker-compose -f docker-compose.test.yaml down
+
 openapi:
 	swag init -g ./cmd/cloud-saves-backend/main.go
 

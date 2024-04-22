@@ -16,8 +16,13 @@ type UserRepository interface {
 
 	GetById(ctx context.Context, userId uint) (*User, error)
 
-	GetAll(
+	GetUsersWithRole(
 		ctx context.Context,
 		dto common.GetResourceDTO,
+		role *Role,
 	) (*common.ResourceDTO[User], error)
+}
+
+type RoleRepository interface {
+	GetByName(ctx context.Context, name RoleName) (*Role, error)
 }

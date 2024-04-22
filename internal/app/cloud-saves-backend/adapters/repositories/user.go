@@ -92,7 +92,11 @@ func whereUsernameLike(searchQuery string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *userRepo) GetAll(ctx context.Context, dto common.GetResourceDTO) (*common.ResourceDTO[user.User], error) {
+func (r *userRepo) GetUsersWithRole(
+	ctx context.Context, 
+	dto common.GetResourceDTO, 
+	role *user.Role,
+) (*common.ResourceDTO[user.User], error) {
 	db := r.getter.DefaultTrOrDB(ctx, r.db)
 
 	userModels := []models.User{}
@@ -101,6 +105,7 @@ func (r *userRepo) GetAll(ctx context.Context, dto common.GetResourceDTO) (*comm
 	err := db.
 		Model(&models.User{}).
 		Scopes(whereUsernameLike(dto.SearchQuery)).
+		Where("role_id = ?", role.GetId()).
 		Count(&totalCount).
 		Order("username asc").
 		Scopes(gorm_utils.Paginate(db, dto)).

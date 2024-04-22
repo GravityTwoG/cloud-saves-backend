@@ -1,13 +1,10 @@
 package auth
 
 import (
-	"cloud-saves-backend/internal/app/cloud-saves-backend/domain/user"
 	"context"
 )
 
-type RoleRepository interface {
-	GetByName(ctx context.Context, name user.RoleName) (*user.Role, error)
-}
+
 
 type PasswordRecoveryTokenRepository interface {
 	Create(ctx context.Context, token *PasswordRecoveryToken) error
